@@ -167,9 +167,6 @@ const createClass = asyncHandler(async (req, res) => {
 });
 
 
-
-
-
 const getClasses = asyncHandler(async (req, res) => {
     const queries = { ...req.query };
 
@@ -276,29 +273,45 @@ const getUserClasses = asyncHandler(async (req, res) => {
 
 const getClassById = asyncHandler(async (req, res) => {
     const { cid } = req.params;
-    const { role } = req.user;
 
     let query = Class.findById(cid)
         .populate('createdBy', 'email')
         .populate({
-            path: 'parts',
-            select: 'title lectureIds', // Chỉ lấy title và lectures của Part
-            populate: { path: 'lectureIds', select: 'title content file' }
+            path: 'lectures',
+            select: 'title content file',
         })
-        .select('title parts');
-
-    // Nếu là giáo viên, lấy thêm danh sách sinh viên
-    if (role === "teacher") {
-        query = query.populate('students', 'email');
-    }
+        .select('title description createdBy lectures');
 
     const response = await query;
 
+    if (!response) {
+        return res.status(404).json({
+            success: false,
+            message: "Class not found"
+        });
+    }
+
+    // Tạo danh sách bài giảng với link download file
+    const lecturesWithDownloadLinks = response.lectures.map(lecture => ({
+        _id: lecture._id,
+        title: lecture.title,
+        content: lecture.content,
+        file: lecture.file ? lecture.file : null, // Link Cloudinary đã lưu
+        downloadLink: lecture.file ? lecture.file : null, // Có thể dùng file trực tiếp làm link tải xuống
+    }));
+
     return res.status(200).json({
-        success: response ? true : false,
-        message: response ? response : "Class not found"
+        success: true,
+        class: {
+            _id: response._id,
+            title: response.title,
+            description: response.description,
+            createdBy: response.createdBy,
+            lectures: lecturesWithDownloadLinks,
+        }
     });
 });
+
 
 
 const updateClass = asyncHandler(async (req, res) => {
@@ -421,75 +434,6 @@ const deleteClass = asyncHandler(async (req, res) => {
     });
 })
 
-const joinClass = asyncHandler(async (req, res) => {
-    const { _id } = req.user
-    const { cid } = req.params
-    const foundClass = await Class.findById(cid)
-    if (!foundClass)
-        return res.status(400).json({
-            success: false,
-            message: "Class not found"
-        })
-
-    if (foundClass.students.includes(_id))
-        return res.status(400).json({
-            success: false,
-            message: "Student already enrolled in this class"
-        })
-
-    foundClass.students.push(_id)
-    await foundClass.save()
-
-    const checkEnrollment = await Enrollment.findOne({ student: _id, classId: cid })
-    if (checkEnrollment)
-        return res.status(400).json({
-            success: false,
-            message: "Enrollment already exists"
-        })
-
-    const newEnrollment = await Enrollment.create({ student: _id, classId: cid })
-
-    return res.status(200).json({
-        success: true,
-        message: "Successfully joined the class",
-        class: foundClass,
-        enrollment: newEnrollment
-    });
-})
-
-const getOutClass = asyncHandler(async (req, res) => {
-    const { _id } = req.user
-    const { cid } = req.params
-    const foundClass = await Class.findById(cid)
-    if (!foundClass)
-        return res.status(400).json({
-            success: false,
-            message: "Class not found"
-        })
-
-    if (!foundClass.students.includes(_id))
-        return res.status(400).json({
-            success: false,
-            message: "Student is not enrolled in this class"
-        })
-
-    foundClass.students = foundClass.students.filter(studentId => studentId.toString() !== _id.toString())
-    await foundClass.save()
-
-    const checkEnrollment = await Enrollment.findOneAndDelete({ student: _id, classId: cid })
-    if (!checkEnrollment)
-        return res.status(400).json({
-            success: false,
-            message: "Enrollment is not exist"
-        })
-
-    return res.status(200).json({
-        success: true,
-        message: "Successfully left the class",
-        enrollment: checkEnrollment,
-        student: foundClass.students
-    });
-})
 
 const uploadImageClass = asyncHandler(async (req, res) => {
     const { cid } = req.params

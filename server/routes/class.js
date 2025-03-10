@@ -20,16 +20,11 @@ router.put(
     classController.updateClass
 );
 
-// router.put('/upload-image/:cid', [verifyAccessToken, isTeacher], uploadImage.array('images', 10), classController.uploadImageProduct)
-router.put('/upload-image/:cid', [verifyAccessToken, isTeacher], uploadImage.single('image'), classController.uploadImageClass)
 
+router.put('/upload-image/:cid', [verifyAccessToken, isTeacher], uploadImage.single('image'), classController.uploadImageClass)
 
 router.delete('/:cid', [verifyAccessToken, isTeacher], classController.deleteClass)
 
 router.get('/', classController.getClasses)
-
-// router.put('/students/join/:cid', [verifyAccessToken, isStudent], classController.joinClass);
-
-// router.put('/students/leave/:cid', [verifyAccessToken, isStudent], classController.getOutClass);
 
 module.exports = router
