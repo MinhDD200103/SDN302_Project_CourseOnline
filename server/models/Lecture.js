@@ -15,6 +15,9 @@ const lectureSchema = new mongoose.Schema({
     },
     file: {
         type: String, 
+    },
+    originalFileName: {
+        type: String
     }
    
 }, { timestamps: true });

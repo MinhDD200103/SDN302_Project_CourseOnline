@@ -1,10 +1,18 @@
-import {Container} from 'react-bootstrap'
-import Header from './components/Header';
+import { Routes, Route } from "react-router-dom";
+import Layout from "./components/Layout";  // Import Layout mới tạo
+import Homepage from "./components/Homepage";
+import Courses from "./components/Courses";
+import CourseDetail from "./components/CourseDetail";
+
 function App() {
   return (
-    <Container fluid >
-      <Header/>
-    </Container>
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Homepage />} />
+        <Route path="course" element={<Courses />} />
+        <Route path="course/:cid" element={<CourseDetail/>} />
+      </Route>
+    </Routes>
   );
 }
 

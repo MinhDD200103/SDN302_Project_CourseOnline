@@ -4,8 +4,10 @@ const { verifyAccessToken, isTeacher, isStudent } = require('../middlewares/veri
 const { uploadImage, uploadFile, uploadMultiple } = require('../config/cloudinary.config')
 
 router.get('/my-classes', verifyAccessToken, classController.getUserClasses)
+router.get('/latest', classController.getLatestClasses)
+router.get('/most-popular', classController.getPopularClasses)
 
-router.get('/:cid', verifyAccessToken, classController.getClassById)
+router.get('/:cid', classController.getClassById)
 
 router.post(
     "/",
@@ -26,5 +28,7 @@ router.put('/upload-image/:cid', [verifyAccessToken, isTeacher], uploadImage.sin
 router.delete('/:cid', [verifyAccessToken, isTeacher], classController.deleteClass)
 
 router.get('/', classController.getClasses)
+
+
 
 module.exports = router

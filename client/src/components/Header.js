@@ -1,41 +1,60 @@
-import { Navbar, Container, Nav, Form, Button } from "react-bootstrap";
+import { Link, useLocation } from "react-router-dom";
 
 export default function Header() {
+  const location = useLocation();
+  const path = location.pathname;
+
   return (
-    <Container fluid style={{ paddingLeft: '0px', paddingRight: '0px' }}>
-      <Navbar expand="lg" className="bg-body" style={{ paddingBottom: '0px', width:'90%', margin: 'auto' }}>
-        <Container fluid>
-          <Navbar.Brand href="#home">Course Online</Navbar.Brand>
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
-          <Navbar.Collapse id="basic-navbar-nav">
-            {/* Search Bar with Button Inside */}
-            <Form className="d-flex me-auto position-relative">
-              <Form.Control
-                type="search"
-                placeholder="What do you want to learn?"
-                className="me-2 rounded-pill pe-5"
-                aria-label="Search"
-                style={{ width: '300px', marginLeft: '20px' }}
-                
-              />
-              <Button 
-                variant="primary" 
-                className="rounded-circle position-absolute"
-                style={{ right: '12px', top: '50%', transform: 'translateY(-50%)', width: '30px', height: '30px', padding: '0' }}
+    <>
+      <div className="container-fluid">
+        <div className="row align-items-center py-3 px-xl-5">
+          <div className="col-lg-3">
+            <a href="" className="text-decoration-none">
+              <h1 className="m-0">
+                <span className="text-primary">E</span>COURSES
+              </h1>
+            </a>
+          </div>
+          <div className="col-lg-9">
+            <nav className="navbar navbar-expand-lg bg-light navbar-light py-0">
+              <button
+                type="button"
+                className="navbar-toggler"
+                data-toggle="collapse"
+                data-target="#navbarCollapse"
               >
-                <i className="bi bi-search"></i>
-              </Button>
-            </Form>
-            
-            {/* Right-side navigation items */}
-            <Nav style={{marginRight: '0px'}}>
-              
-              <Button variant="outline-primary" className="ms-2 rounded">Log in</Button>
-            </Nav>
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
-      <hr/>
-    </Container>
+                <span className="navbar-toggler-icon" />
+              </button>
+              <div
+                className="collapse navbar-collapse justify-content-between"
+                id="navbarCollapse"
+              >
+                <div className="navbar-nav py-0">
+                  <Link 
+                    to="/" 
+                    className={`nav-item nav-link ${path === "/" ? "active" : ""}`}
+                  >
+                    Home
+                  </Link>
+                  <Link 
+                    to="/course" 
+                    className={`nav-item nav-link ${path === "/course" ? "active" : ""}`}
+                  >
+                    Courses
+                  </Link>
+                  {/* Các mục điều hướng khác có thể được thêm vào đây */}
+                </div>
+                <a
+                  className="btn btn-primary py-2 px-4 ml-auto"
+                  href=""
+                >
+                  Join Now
+                </a>
+              </div>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

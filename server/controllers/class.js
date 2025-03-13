@@ -1,130 +1,34 @@
 const asyncHandler = require("express-async-handler");
 const slugify = require("slugify");
 const Class = require("../models/Class");
-// const Part = require("../models/Part");
 const Lecture = require("../models/Lecture");
-const Enrollment = require('../models/Enrollment')
-
-
-// const createClass = asyncHandler(async (req, res) => {
-//     const { _id } = req.user; // ID người tạo lớp học (giảng viên)
-//     console.log('Request body: ', req.body);
-//     console.log('Request file (class image): ', req.file);
-
-//     if (!req.body.title) throw new Error("Missing class title");
-
-//     // Parse parts từ JSON nếu cần
-//     const parsedParts = typeof req.body.parts === 'string' ? JSON.parse(req.body.parts) : req.body.parts;
-//     if (!parsedParts || !Array.isArray(parsedParts) || parsedParts.length === 0) {
-//         throw new Error("A class must have at least one Part");
-//     }
-
-//     // Đường dẫn ảnh của lớp học từ Cloudinary (được xử lý bởi uploadImage)
-//     const imagePath = req.files && req.files.image ? req.files.image[0].path : ''
-
-//     // 1️⃣ Tạo lớp học
-//     const classSlug = slugify(req.body.title, { lower: true, strict: true });
-//     const newClass = await Class.create({
-//         title: req.body.title,
-//         slug: classSlug,
-//         description: req.body.description,
-//         image: imagePath,
-//         createdBy: _id
-//     });
-//     if (!newClass) throw new Error("Cannot create class");
-
-//     // Lấy danh sách file bài giảng từ req.files (xử lý bởi uploadFile.array('lectureFile'))
-//     const lectureFiles = req.files && req.files.lectureFile ? req.files.lectureFile : [];
-//     let lectureFileIndex = 0;
-
-//     // 2️⃣ Duyệt qua từng phần (Part)
-//     const parts = await Promise.all(parsedParts.map(async (part) => {
-//         if (!part.title) throw new Error("Each Part must have a title");
-//         if (!part.lectures || !Array.isArray(part.lectures) || part.lectures.length === 0) {
-//             throw new Error(`Part "${part.title}" must have at least one Lecture`);
-//         }
-
-//         // Tạo Part trong MongoDB
-//         const newPart = await Part.create({
-//             title: part.title,
-//             classId: newClass._id
-//         });
-
-//         // 3️⃣ Duyệt qua các bài giảng của Part
-//         const lectureIds = await Promise.all(part.lectures.map(async (lecture) => {
-//             if (!lecture.title) throw new Error("Each Lecture must have a title");
-
-//             const lectureSlug = slugify(lecture.title, { lower: true });
-
-//             // Nếu có file được upload dành cho bài giảng này, lấy file từ mảng theo thứ tự
-//             let lectureFilePath = '';
-//             if (lectureFiles.length > lectureFileIndex) {
-//                 lectureFilePath = lectureFiles[lectureFileIndex].path;
-//                 lectureFileIndex++;
-//             }
-
-//             // Tạo Lecture trong MongoDB với file (nếu có) được upload từ Cloudinary
-//             const newLecture = await Lecture.create({
-//                 title: lecture.title,
-//                 slug: lectureSlug,
-//                 content: lecture.content || "",
-//                 file: lectureFilePath || (lecture.file || "")
-//             });
-
-//             return newLecture._id; // Trả về ID của bài giảng vừa tạo
-//         }));
-
-//         // 4️⃣ Cập nhật danh sách bài giảng cho Part
-//         newPart.lectureIds = lectureIds;
-//         await newPart.save();
-
-//         return newPart._id; // Trả về ID của Part
-//     }));
-
-//     // 5️⃣ Cập nhật danh sách Parts của lớp học
-//     newClass.parts = parts;
-//     await newClass.save();
-
-//     // Populate dữ liệu trả về
-//     const populatedClass = await Class.findById(newClass._id)
-//         .populate('createdBy', 'name email')
-//         .populate('students', 'email')
-//         .populate({
-//             path: 'parts',
-//             select: 'title lectureIds',
-//             populate: { path: 'lectureIds', select: 'title content file' }
-//         })
-//         .select('title parts image');
-
-//     return res.status(201).json({
-//         success: true,
-//         createdClass: populatedClass
-//     });
-// });
-
+const Enrollment = require('../models/Enrollment');
 
 const createClass = asyncHandler(async (req, res) => {
-    const { _id } = req.user;  // ID of the instructor creating the class
+    const { _id } = req.user; // ID của giáo viên tạo lớp học
 
     if (!req.body.title) throw new Error("Class title is required");
 
-    // Get class image (if provided)
+    // Lấy đường dẫn ảnh lớp học (nếu có)
     const imagePath = req.files?.image?.[0]?.path || "";
 
-    // 1️⃣ Create the class
+    // 1️⃣ Tạo slug cho lớp học
     const classSlug = slugify(req.body.title, { lower: true, strict: true });
 
-    // 2️⃣ Process lectures from form-data
+    // 2️⃣ Xử lý danh sách bài giảng
     let lectureIds = [];
     const lectureFiles = req.files?.lectureFiles || [];
 
-    // Iterate through lectures
-    for (let i = 0; i < req.body.lectures.length; i++) {
-        const title = req.body.lectures[i].title;
-        const content = req.body.lectures[i].content || "";
-        const filePath = lectureFiles[i] ? lectureFiles[i].path : "";
+    if (!req.body.lectures || req.body.lectures.length === 0) {
+        throw new Error("A class must have at least one lecture");
+    }
 
+    for (let i = 0; i < req.body.lectures.length; i++) {
+        const { title, content = "" } = req.body.lectures[i];
         if (!title) throw new Error(`Lecture ${i + 1} must have a title`);
+
+        const filePath = lectureFiles[i]?.path || ""; // Đường dẫn file trên Cloudinary
+        const originalFileName = lectureFiles[i]?.originalname || ""; // Lấy tên gốc của file
 
         const lectureSlug = slugify(title, { lower: true });
 
@@ -132,32 +36,29 @@ const createClass = asyncHandler(async (req, res) => {
             title,
             slug: lectureSlug,
             content,
-            file: filePath
+            file: filePath,
+            originalFileName
         });
 
         lectureIds.push(newLecture._id);
     }
 
-    if (lectureIds.length === 0) throw new Error("A class must have at least one lecture");
-
+    // 3️⃣ Tạo lớp học
     const newClass = await Class.create({
         title: req.body.title,
         slug: classSlug,
         description: req.body.description,
         image: imagePath,
-        createdBy: _id
+        createdBy: _id,
+        lectures: lectureIds
     });
 
     if (!newClass) throw new Error("Failed to create class");
 
-    // 3️⃣ Assign lectures to the class
-    newClass.lectures = lectureIds;
-    await newClass.save();
-
-    // 4️⃣ Populate data before returning the response
+    // 4️⃣ Populate dữ liệu trước khi trả về
     const populatedClass = await Class.findById(newClass._id)
         .populate("createdBy", "name email")
-        .populate("lectures", "title content file")
+        .populate("lectures", "title content file originalFileName")
         .select("title description image lectures");
 
     res.status(201).json({
@@ -166,121 +67,15 @@ const createClass = asyncHandler(async (req, res) => {
     });
 });
 
-
-const getClasses = asyncHandler(async (req, res) => {
-    const queries = { ...req.query };
-
-    const excludeFields = ['limit', 'sort', 'page', 'fields'];
-    excludeFields.forEach(item => delete queries[item]);
-
-    // Format lại các operators cho đúng cú pháp của mongoose
-    let queryString = JSON.stringify(queries);
-    queryString = queryString.replace(/\b(gte|gt|lt|lte)\b/g, matchedItem => `$${matchedItem}`);
-    const formatedQueries = JSON.parse(queryString);
-
-    // Filtering theo title (dùng regex để tìm kiếm không phân biệt hoa thường)
-    if (queries?.title)
-        formatedQueries.title = { $regex: queries.title, $options: 'i' };
-
-    // Khởi tạo query
-    let queryCommand = Class.find(formatedQueries).populate('createdBy', 'email').select('-students -parts'); //Tạm thời lấy email trước do chưa có tên lúc khởi tạo
-
-    // Sorting (Sắp xếp)
-    if (req.query.sort) {
-        const sortBy = req.query.sort.split(',').join(' ');
-        queryCommand = queryCommand.sort(sortBy);
-    } else {
-        queryCommand = queryCommand.sort('-createdAt');
-    }
-
-    // Fields Selection (Chọn các trường dữ liệu cụ thể)
-    if (req.query.fields) {
-        const fields = req.query.fields.split(',').join(' ');
-        queryCommand = queryCommand.select(fields);
-    }
-
-    // Pagination (Phân trang)
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 1;
-    const skip = (page - 1) * limit;
-    queryCommand = queryCommand.skip(skip).limit(limit);
-
-    // Execute Query
-    const classes = await queryCommand.exec();
-    const totalCount = await Class.countDocuments(formatedQueries);
-
-    return res.status(200).json({
-        success: true,
-        totalPages: Math.ceil(totalCount / limit),
-        currentPage: page,
-        totalCount,
-        classes
-    });
-});
-
-
-const getUserClasses = asyncHandler(async (req, res) => {
-    const { _id, role } = req.user; // Lấy ID và vai trò của người dùng (sinh viên hoặc giảng viên)
-
-    // Nếu là sinh viên → Lấy danh sách lớp mà sinh viên đã tham gia
-    let query = role === "student" ? { students: _id } : { createdBy: _id };
-
-    const classes = await Class.find(query)
-        .populate('createdBy', 'name email') // Lấy thông tin giảng viên
-        .select('title description createdBy createdAt');
-
-    return res.status(200).json({
-        success: true,
-        classes
-    });
-});
-
-
-// const getClassById = asyncHandler(async (req, res) => {
-//     const { cid } = req.params
-//     const { role } = req.user
-//     if (role === "student") {
-//         const response = await Class.findById(cid)
-//             .populate('createdBy', 'email') 
-//             .populate({
-//                 path: 'parts',
-//                 select: 'title lectures', // Chỉ lấy title và lectures của Part
-//                 populate: { path: 'lectures', select: 'title content file' } 
-//             })
-//             .select('title parts'); 
-//         return res.status(200).json({
-//             success: response ? true : false,
-//             message: response ? response : "Class not found"
-//         })
-//     }
-
-//     const response = await Class.findById(cid)
-//         .populate('createdBy', 'email').select('-_id')
-//         .populate('students', 'email')
-//         .populate({
-//             path: 'parts',
-//             select: 'title lectures -_id',
-//             populate: { path: 'lectures', select: 'title content file -_id' }
-//         })
-//         .select('title lectures -_id')
-
-//     return res.status(200).json({
-//         success: response ? true : false,
-//         message: response ? response : "Class not found"
-//     })
-
-// })
-
 const getClassById = asyncHandler(async (req, res) => {
     const { cid } = req.params;
 
     let query = Class.findById(cid)
-        .populate('createdBy', 'email')
+        .populate('createdBy', 'name')
         .populate({
             path: 'lectures',
-            select: 'title content file',
-        })
-        .select('title description createdBy lectures');
+            select: 'title content file originalFileName',
+        });
 
     const response = await query;
 
@@ -291,14 +86,30 @@ const getClassById = asyncHandler(async (req, res) => {
         });
     }
 
-    // Tạo danh sách bài giảng với link download file
-    const lecturesWithDownloadLinks = response.lectures.map(lecture => ({
-        _id: lecture._id,
-        title: lecture.title,
-        content: lecture.content,
-        file: lecture.file ? lecture.file : null, // Link Cloudinary đã lưu
-        downloadLink: lecture.file ? lecture.file : null, // Có thể dùng file trực tiếp làm link tải xuống
-    }));
+    // Xử lý danh sách lectures với link tải đúng
+    const lecturesWithDownloadLinks = response.lectures.map(lecture => {
+        let fileUrl = lecture.file || null;
+        let downloadLink = null;
+
+        if (fileUrl) {
+            if (fileUrl.includes('cloudinary.com')) {
+                // Nếu file là Cloudinary URL, giữ nguyên đường dẫn
+                downloadLink = fileUrl;
+            } else {
+                // Nếu file nằm trên server local, thêm URL_SERVER vào
+                downloadLink = `${process.env.URL_SERVER}/upload/${lecture.file}`;
+            }
+        }
+
+        return {
+            _id: lecture._id,
+            title: lecture.title,
+            content: lecture.content,
+            file: fileUrl,
+            originalFileName: lecture.originalFileName,
+            downloadLink: downloadLink
+        };
+    });
 
     return res.status(200).json({
         success: true,
@@ -308,22 +119,27 @@ const getClassById = asyncHandler(async (req, res) => {
             description: response.description,
             createdBy: response.createdBy,
             lectures: lecturesWithDownloadLinks,
+            createdAt: response.createdAt,
+            image: response.image,
         }
     });
+
 });
+
+
 
 
 
 const updateClass = asyncHandler(async (req, res) => {
     const { cid } = req.params;
 
-    // Tìm lớp học trong database
+    // Find class in database
     const foundClass = await Class.findById(cid);
     if (!foundClass) {
         return res.status(404).json({ success: false, message: "Class not found" });
     }
 
-    // Cập nhật thông tin lớp học (chỉ cập nhật nếu có dữ liệu mới)
+    // Update class information (only if new data is provided)
     if (req.body.title && req.body.title !== foundClass.title) {
         foundClass.title = req.body.title;
         foundClass.slug = slugify(req.body.title, { lower: true, strict: true });
@@ -333,12 +149,13 @@ const updateClass = asyncHandler(async (req, res) => {
         foundClass.description = req.body.description;
     }
 
-    // Xử lý ảnh lớp học (nếu có)
+    // Process class image (if provided)
     if (req.files?.image) {
-        foundClass.image = req.files.image[0].path; // Lưu URL ảnh từ Cloudinary
+        foundClass.image = req.files.image[0].path; // Save Cloudinary image URL
     }
+
     if (req.body.lectures && Array.isArray(req.body.lectures)) {
-        const newLectureIds = new Set(foundClass.lectures.map(id => id.toString())); // Giữ ID cũ
+        const newLectureIds = new Set(foundClass.lectures.map(id => id.toString())); // Keep old IDs
 
         await Promise.all(req.body.lectures.map(async (lecture, index) => {
             if (!lecture.title || lecture.title.trim() === "") {
@@ -351,14 +168,15 @@ const updateClass = asyncHandler(async (req, res) => {
                 content: lecture.content || "",
             };
 
-            // Nếu có file bài giảng được tải lên, cập nhật file mới
+            // If lecture file is uploaded, update with new file
             if (req.files?.lectureFiles && req.files.lectureFiles[index]) {
                 lectureData.file = req.files.lectureFiles[index].path;
+                lectureData.originalFileName = req.files.lectureFiles[index].originalname;
             }
 
             let lectureId;
             if (lecture._id) {
-                // Nếu bài giảng đã tồn tại, cập nhật thông tin
+                // If lecture already exists, update information
                 const existingLecture = await Lecture.findById(lecture._id);
                 if (!existingLecture) {
                     throw new Error(`Lecture with ID ${lecture._id} not found`);
@@ -370,30 +188,31 @@ const updateClass = asyncHandler(async (req, res) => {
 
                 if (lectureData.file) {
                     existingLecture.file = lectureData.file;
+                    existingLecture.originalFileName = lectureData.originalFileName;
                 }
 
                 await existingLecture.save();
                 lectureId = existingLecture._id;
             } else {
-                // Nếu bài giảng chưa tồn tại, tạo mới
+                // If lecture doesn't exist, create a new one
                 const newLecture = await Lecture.create(lectureData);
                 lectureId = newLecture._id;
             }
 
-            newLectureIds.add(lectureId.toString()); // Thêm ID vào danh sách
+            newLectureIds.add(lectureId.toString()); // Add ID to the list
         }));
 
-        // Cập nhật danh sách bài giảng trong lớp học (giữ lại bài cũ + thêm bài mới)
+        // Update lecture list in the class (keep old + add new)
         foundClass.lectures = Array.from(newLectureIds);
     }
 
-    // Lưu thay đổi vào database
+    // Save changes to database
     await foundClass.save();
 
-    // Populate lại dữ liệu trước khi trả về
+    // Populate data before returning the response
     const populatedClass = await Class.findById(foundClass._id)
         .populate('createdBy', 'name email')
-        .populate('lectures', 'title content file')
+        .populate('lectures', 'title content file originalFileName')
         .select('title description image lectures');
 
     return res.status(200).json({
@@ -402,6 +221,135 @@ const updateClass = asyncHandler(async (req, res) => {
     });
 });
 
+// Other functions remain the same as they don't interact with the originalFileName field
+
+
+const getLatestClasses = asyncHandler(async (req, res) => {
+    try {
+        const latestClasses = await Class.find()
+            .sort({ createdAt: -1 })
+            .populate('createdBy', 'name')
+            .limit(3)
+            .select("title image createdAt lectures");
+
+        return res.status(200).json({
+            success: true,
+            classes: latestClasses
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+const getPopularClasses = asyncHandler(async (req, res) => {
+    const topClasses = await Enrollment.aggregate([
+        {
+            $group: {
+                _id: "$classId",
+                studentCount: { $sum: 1 }
+            }
+        },
+        { $sort: { studentCount: -1 } },
+        { $limit: 3 },
+        {
+            $lookup: {
+                from: "classes",
+                localField: "_id",
+                foreignField: "_id",
+                as: "classInfo"
+            }
+        },
+        { $unwind: "$classInfo" },
+        {
+            $lookup: {
+                from: "users",
+                localField: "classInfo.createdBy",
+                foreignField: "_id",
+                as: "creatorInfo"
+            }
+        },
+        { $unwind: "$creatorInfo" },
+        {
+            $project: {
+                _id: "$classInfo._id",
+                title: "$classInfo.title",
+                image: "$classInfo.image",
+                createdAt: "$classInfo.createdAt",
+                studentCount: 1,
+                creatorName: "$creatorInfo.name",
+                creatorEmail: "$creatorInfo.email",
+                lectures: "$classInfo.lectures",
+            }
+        }
+    ]);
+
+    if (!topClasses)
+        throw new Error('Class not found')
+
+    return res.status(200).json({
+        success: true,
+        classes: topClasses
+    });
+});
+
+const getClasses = asyncHandler(async (req, res) => {
+    const queries = { ...req.query };
+
+    const excludeFields = ['limit', 'sort', 'page', 'fields'];
+    excludeFields.forEach(item => delete queries[item]);
+
+    let queryString = JSON.stringify(queries);
+    queryString = queryString.replace(/\b(gte|gt|lt|lte)\b/g, matchedItem => `$${matchedItem}`);
+    const formatedQueries = JSON.parse(queryString);
+
+    if (queries?.title)
+        formatedQueries.title = { $regex: queries.title, $options: 'i' };
+
+    let queryCommand = Class.find(formatedQueries).populate('createdBy', 'name').select('-slug -description');
+
+    if (req.query.sort) {
+        const sortBy = req.query.sort.split(',').join(' ');
+        queryCommand = queryCommand.sort(sortBy);
+    } else {
+        queryCommand = queryCommand.sort('-createdAt');
+    }
+
+    if (req.query.fields) {
+        const fields = req.query.fields.split(',').join(' ');
+        queryCommand = queryCommand.select(fields);
+    }
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 2;
+    const skip = (page - 1) * limit;
+    queryCommand = queryCommand.skip(skip).limit(limit);
+
+    const classes = await queryCommand.exec();
+    const totalCount = await Class.countDocuments(formatedQueries);
+
+    return res.status(200).json({
+        success: true,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        totalCount,
+        classes
+    });
+});
+
+const getUserClasses = asyncHandler(async (req, res) => {
+    const { _id, role } = req.user;
+
+    let query = role === "student" ? { students: _id } : { createdBy: _id };
+
+    const classes = await Class.find(query)
+        .populate('createdBy', 'name email')
+        .select('title description createdBy createdAt');
+
+    return res.status(200).json({
+        success: true,
+        classes
+    });
+});
 
 const deleteClass = asyncHandler(async (req, res) => {
     const { cid } = req.params
@@ -413,12 +361,11 @@ const deleteClass = asyncHandler(async (req, res) => {
             message: "Class not found"
         })
 
-
     const populatedClass = await Class.findById(foundClass._id)
         .populate('createdBy', 'name email')
         .populate({
             path: 'lectures',
-            select: 'title content file'
+            select: 'title content file originalFileName'
         })
         .select('title lectures');
 
@@ -432,21 +379,20 @@ const deleteClass = asyncHandler(async (req, res) => {
         success: true,
         deletedClass: populatedClass
     });
-})
-
+});
 
 const uploadImageClass = asyncHandler(async (req, res) => {
     const { cid } = req.params
     if (!req.file)
         throw new Error('Missing inputs')
-    // const response = await Class.findByIdAndUpdate(cid, { $push: { images: { $each: req.files.map(file => file.path) } } }, { new: true })
     const response = await Class.findByIdAndUpdate(cid, { image: req.file.path }, { new: true })
 
     return res.status(200).json({
         success: response ? true : false,
         updatedProduct: response ? response : 'Cannot upload images product'
     })
-})
+});
+
 module.exports = {
     createClass,
     getClasses,
@@ -454,5 +400,7 @@ module.exports = {
     deleteClass,
     getClassById,
     getUserClasses,
-    uploadImageClass
+    uploadImageClass,
+    getLatestClasses,
+    getPopularClasses
 };
