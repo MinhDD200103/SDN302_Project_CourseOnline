@@ -5,7 +5,7 @@ import API_BASE_URL from '../config/config';
 
 
 export default function Homepage() {
-    const [classes, setClasses] = useState([]);
+    // const [classes, setClasses] = useState([]);
     const [latestClasses, setLatestClasses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);

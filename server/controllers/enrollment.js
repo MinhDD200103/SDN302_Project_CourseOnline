@@ -85,12 +85,12 @@ const getEnrollment = asyncHandler(async (req, res) => {
     const formatedQueries = JSON.parse(queryString);
 
     let studentIds = [];
-    
+
     // Nếu có filter theo email, tìm student _id tương ứng
     if (req.query.email) {
         const students = await User.find({ email: { $regex: req.query.email, $options: 'i' } }).select('_id');
         studentIds = students.map(s => s._id);
-        
+
         if (studentIds.length === 0) {
             return res.status(200).json({ success: true, totalPages: 0, currentPage: 1, totalCount: 0, enrollments: [] });
         }
@@ -145,8 +145,41 @@ const getEnrollment = asyncHandler(async (req, res) => {
     });
 });
 
+const getUserClasses = asyncHandler(async (req, res) => {
+    const { _id, role } = req.user
+
+    let response;
+
+    if (role === "student") {
+        response = await Enrollment.find({ student: _id })
+            .populate({
+                path: 'classId',
+                select: 'createdBy title lectures',
+                populate: {
+                    path: 'createdBy',
+                    select: 'name'  // Lấy thêm tên của giáo viên tạo lớp
+                }
+            });
+    }
+    else {
+        // Nếu là giáo viên, lấy danh sách lớp mà họ đã tạo
+        response = await Class.find({ createdBy: _id })
+            .select('title lectures students')
+            .populate({
+                path: 'createdBy',
+                select: 'name email' 
+            });
+    }
+
+    return res.status(200).json({
+        success: true,
+        userClass: response
+    });
+});
+
 module.exports = {
     enrollClass,
     leaveClass,
-    getEnrollment
+    getEnrollment,
+    getUserClasses
 }

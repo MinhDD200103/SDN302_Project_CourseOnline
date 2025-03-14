@@ -12,7 +12,8 @@ const port = process.env.PORT || 8888
 app.use(cors({
     origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true 
+    credentials: true ,
+    allowedHeaders: ["Content-Type", "Authorization"]
 }))
 
 app.use(express.json())

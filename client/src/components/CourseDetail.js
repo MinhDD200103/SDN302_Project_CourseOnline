@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import API_BASE_URL from '../config/config';
 import { Accordion } from 'react-bootstrap';
 // import Swal from 'sweetalert2';
+import sweetalert from 'sweetalert'
+import { Button, Form, Modal } from "react-bootstrap";
+import API from "../axiosConfig";
+
+import { jwtDecode } from "jwt-decode";
 
 const CourseDetail = () => {
     const [course, setCourse] = useState({});
@@ -11,12 +16,21 @@ const CourseDetail = () => {
     const [teacherName, setTeacherName] = useState('');
     const [lectures, setLectures] = useState([]);
     const [currentDate, setCurrentDate] = useState('');
+    const [show, setShow] = useState(false);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [accessToken, setAccessToken] = useState(localStorage.getItem('accessToken'))
+    const [role, setRole] = useState(localStorage.getItem('role'))
+    const [userCourses, setUserCourses] = useState([])
+    const [isEnroll, setIsEnroll] = useState(false)
+    const [enrolledDate, setEnrolledDate] = useState('')
 
+    const navigate = useNavigate()
     useEffect(() => {
         const fetchClass = async () => {
             try {
                 const response = await axios.get(`${API_BASE_URL}/class/${cid}`);
-                console.log(response.data.class.lectures);
+                // console.log(response.data.class.lectures);
                 setLectures(response.data.class.lectures);
                 setCourse(response.data.class);
                 setTeacherName(response.data.class.createdBy.name);
@@ -30,7 +44,115 @@ const CourseDetail = () => {
         const today = new Date();
         const options = { month: 'short', day: 'numeric' };
         setCurrentDate(today.toLocaleDateString('en-US', options)); // Format: "Mar 13"
-    }, [cid]);
+
+        const fetchUserClass = async () => {
+            try {
+                const response = await axios.get(`${API_BASE_URL}/enrollment/my-classes`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`
+                        },
+                        withCredentials: true
+                    }
+                );
+
+                setUserCourses(response.data.userClass)
+                // console.log();
+
+            } catch (error) {
+                console.log("Cannot get class from server", error);
+            }
+
+
+        }
+
+        fetchUserClass()
+
+        const checkEnroll = () => {
+            userCourses.map(course => {
+                console.log(course.student);
+
+                if (course.classId._id == cid) {
+                    setIsEnroll(true)
+                    setEnrolledDate(course.enrolledAt.toLocaleDateString('en-US', options))
+                    return
+                }
+            })
+        }
+        checkEnroll()
+
+    }, [cid, accessToken]);
+
+    useEffect(() => {
+        if (userCourses.length > 0) {
+            userCourses.forEach(course => {
+                if (course.classId._id === cid) {
+                    setIsEnroll(true);
+                    const options = { month: 'short', day: 'numeric' };
+                    setEnrolledDate(new Date(course.enrolledAt).toLocaleDateString('en-US', options));
+                }
+            });
+        }
+    }, [userCourses]);
+    // console.log(accessToken);
+
+    console.log(userCourses);
+
+
+
+
+
+    const handleClose = () => setShow(false);
+    const handleShow = () => setShow(true);
+
+    const handleLogin = async () => {
+        try {
+            const response = await API.post("/user/login", { email, password });
+
+            if (response.data.success) {
+                localStorage.setItem("accessToken", response.data.accessToken);
+                localStorage.setItem("email", response.data.userData.email);
+                // localStorage.setItem("avatar", response.data.userData.avatar);
+                setAccessToken(localStorage.getItem('accessToken'))
+                const decodedToken = jwtDecode(accessToken)
+                localStorage.setItem('role', decodedToken.role)
+                setRole(localStorage.getItem('role'))
+
+                sweetalert("Success", "Login successfully!", "success").then(() => {
+                    handleClose();
+                    navigate(`/course/${cid}`)
+                });
+
+                setEmail("");
+                setPassword("");
+            }
+        } catch (error) {
+            sweetalert("Error", error.response?.data?.mes || "Login failed!", "error");
+        }
+    };
+
+
+    const handleEnroll = async () => {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/enrollment/${cid}`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,  // Gửi token chính xác
+                        // "Content-Type": "application/json"
+                    },
+                    withCredentials: true // Nếu backend yêu cầu cookie
+                }
+            );
+            console.log(response.data);
+            sweetalert("Success", "Enrollment successful!", "success");
+        } catch (error) {
+            console.error("Enrollment error:", error);
+            sweetalert("Error", error.response?.data?.message || "Enrollment failed!", "error");
+        }
+    };
+
+
 
     // Function to download file using the provided download link
     // const handleDownload = (downloadLink, originalFileName) => {
@@ -49,6 +171,17 @@ const CourseDetail = () => {
     // };
 
     const handleDownload = async (lecture) => {
+        if (!accessToken) {
+            sweetalert("Error", "You need to login course to download", "error");
+            return
+        }
+
+        if (!isEnroll) {
+            sweetalert("Error", "You need to enroll course to download", "error");
+            return
+        }
+
+
         if (!lecture.downloadLink) {
             console.error("Download link not available");
             return;
@@ -131,12 +264,12 @@ const CourseDetail = () => {
                                 <p>
                                     {course.description}
                                 </p>
-
-                                <button className='btn btn-primary mb-3'>
-                                    <p style={{ marginBottom: "-7px" }}>Enroll</p>
+                                {role == 'student' && (<button className='btn btn-primary mb-3' disabled={isEnroll ? true : false} onClick={accessToken ? handleEnroll : handleShow}>
+                                    <p style={{ marginBottom: "-7px" }}>{isEnroll ? 'Enrolled' : 'Enroll'}</p>
                                     {/* <br /> */}
-                                    <span style={{ fontSize: '12px' }}>Starts {currentDate}</span>
-                                </button>
+                                    <span style={{ fontSize: '12px' }}> {isEnroll ? `At ${enrolledDate}` : `Starts ${currentDate}`}</span>
+                                </button>)}
+
                                 {/* Course Content */}
                                 <h2 className="mb-4">Course Content</h2>
 
@@ -145,30 +278,30 @@ const CourseDetail = () => {
                                     {Array.isArray(lectures) && lectures.length > 0 ? (
                                         lectures.map((lecture, index) => (
                                             <Accordion.Item eventKey={index.toString()} key={`lecture-${index}`}>
-                                                <Accordion.Header>{lecture.title}</Accordion.Header>
-                                                <Accordion.Body style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <div>
-                                                        {lecture.content}
-                                                    </div>
-                                                    {lecture.file && (
-                                                        <div>
-                                                            <button className='btn btn-primary'
-                                                                onClick={() => handleDownload(lecture)}
-                                                                title={getFileDisplayName(lecture)}
-                                                            >
-                                                                <i className="bi bi-download" style={{ marginRight: '8px' }}></i>
-                                                                Download file
-                                                                {/* {lecture.originalFileName && 
+                                        <Accordion.Header>{lecture.title}</Accordion.Header>
+                                        <Accordion.Body style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                {lecture.content}
+                                            </div>
+                                            {lecture.file && (
+                                                <div>
+                                                    <button className='btn btn-primary'
+                                                        onClick={() => handleDownload(lecture)}
+                                                        title={getFileDisplayName(lecture)}
+                                                    >
+                                                        <i className="bi bi-download" style={{ marginRight: '8px' }}></i>
+                                                        Download file
+                                                        {/* {lecture.originalFileName && 
                                                                     <span className="ms-1">({getFileDisplayName(lecture)})</span>
                                                                 } */}
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </Accordion.Body>
-                                            </Accordion.Item>
-                                        ))
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </Accordion.Body>
+                                    </Accordion.Item>
+                                    ))
                                     ) : (
-                                        <p>No lectures available for this course.</p>
+                                    <p>No lectures available for this course.</p>
                                     )}
                                 </Accordion>
                             </div>
@@ -195,6 +328,42 @@ const CourseDetail = () => {
                     </div>
                 </div>
             </div>
+
+            <Modal show={show} onHide={handleClose}>
+                <Modal.Header closeButton>
+                    <Modal.Title style={{ marginLeft: "200px" }}>Login</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Email address</Form.Label>
+                            <Form.Control
+                                type="email"
+                                placeholder="Enter your email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Password</Form.Label>
+                            <Form.Control
+                                type="password"
+                                placeholder="Enter your password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" style={{ padding: "10px 20px" }} onClick={handleClose}>
+                        Close
+                    </Button>
+                    <Button variant="primary" style={{ padding: "10px 20px" }} onClick={handleLogin}>
+                        Login
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </>
     );
 }

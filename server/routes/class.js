@@ -3,7 +3,6 @@ const classController = require('../controllers/class')
 const { verifyAccessToken, isTeacher, isStudent } = require('../middlewares/verifyToken')
 const { uploadImage, uploadFile, uploadMultiple } = require('../config/cloudinary.config')
 
-router.get('/my-classes', verifyAccessToken, classController.getUserClasses)
 router.get('/latest', classController.getLatestClasses)
 router.get('/most-popular', classController.getPopularClasses)
 

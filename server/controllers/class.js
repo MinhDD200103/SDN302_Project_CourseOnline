@@ -336,20 +336,7 @@ const getClasses = asyncHandler(async (req, res) => {
     });
 });
 
-const getUserClasses = asyncHandler(async (req, res) => {
-    const { _id, role } = req.user;
 
-    let query = role === "student" ? { students: _id } : { createdBy: _id };
-
-    const classes = await Class.find(query)
-        .populate('createdBy', 'name email')
-        .select('title description createdBy createdAt');
-
-    return res.status(200).json({
-        success: true,
-        classes
-    });
-});
 
 const deleteClass = asyncHandler(async (req, res) => {
     const { cid } = req.params
@@ -399,7 +386,6 @@ module.exports = {
     updateClass,
     deleteClass,
     getClassById,
-    getUserClasses,
     uploadImageClass,
     getLatestClasses,
     getPopularClasses
