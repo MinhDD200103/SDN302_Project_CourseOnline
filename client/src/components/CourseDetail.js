@@ -3,12 +3,14 @@ import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
 import API_BASE_URL from '../config/config';
 import { Accordion } from 'react-bootstrap';
+// import Swal from 'sweetalert2';
 
 const CourseDetail = () => {
     const [course, setCourse] = useState({});
     const { cid } = useParams();
     const [teacherName, setTeacherName] = useState('');
     const [lectures, setLectures] = useState([]);
+    const [currentDate, setCurrentDate] = useState('');
 
     useEffect(() => {
         const fetchClass = async () => {
@@ -24,6 +26,10 @@ const CourseDetail = () => {
         }
 
         fetchClass();
+
+        const today = new Date();
+        const options = { month: 'short', day: 'numeric' };
+        setCurrentDate(today.toLocaleDateString('en-US', options)); // Format: "Mar 13"
     }, [cid]);
 
     // Function to download file using the provided download link
@@ -32,7 +38,7 @@ const CourseDetail = () => {
     //         console.error("Download link not available");
     //         return;
     //     }
-    
+
     //     // Tạo thẻ `<a>` ẩn để tải file về với đúng tên file
     //     const link = document.createElement("a");
     //     link.href = downloadLink;
@@ -47,22 +53,22 @@ const CourseDetail = () => {
             console.error("Download link not available");
             return;
         }
-    
+
         try {
             const response = await fetch(lecture.downloadLink);
             if (!response.ok) {
                 throw new Error("Failed to fetch file");
             }
-    
+
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
-    
+
             link.href = url;
             link.setAttribute('download', lecture.originalFileName || 'downloaded_file'); // Giữ đúng tên file
             document.body.appendChild(link);
             link.click();
-    
+
             // Giải phóng URL sau khi tải xong
             window.URL.revokeObjectURL(url);
             document.body.removeChild(link);
@@ -126,15 +132,21 @@ const CourseDetail = () => {
                                     {course.description}
                                 </p>
 
+                                <button className='btn btn-primary mb-3'>
+                                    <p style={{ marginBottom: "-7px" }}>Enroll</p>
+                                    {/* <br /> */}
+                                    <span style={{ fontSize: '12px' }}>Starts {currentDate}</span>
+                                </button>
                                 {/* Course Content */}
                                 <h2 className="mb-4">Course Content</h2>
+
 
                                 <Accordion>
                                     {Array.isArray(lectures) && lectures.length > 0 ? (
                                         lectures.map((lecture, index) => (
                                             <Accordion.Item eventKey={index.toString()} key={`lecture-${index}`}>
                                                 <Accordion.Header>{lecture.title}</Accordion.Header>
-                                                <Accordion.Body style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                                <Accordion.Body style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                     <div>
                                                         {lecture.content}
                                                     </div>
