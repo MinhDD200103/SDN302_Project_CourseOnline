@@ -2,10 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import API_BASE_URL from '../config/config';
-import { Accordion } from 'react-bootstrap';
 // import Swal from 'sweetalert2';
 import sweetalert from 'sweetalert'
-import { Button, Form, Modal } from "react-bootstrap";
+import { Button, Form, Modal, Accordion } from "react-bootstrap";
 import API from "../axiosConfig";
 
 import { jwtDecode } from "jwt-decode";
@@ -80,7 +79,10 @@ const CourseDetail = () => {
 
                 if (course.classId._id == cid) {
                     setIsEnroll(true)
-                    setEnrolledDate(course.enrolledAt.toLocaleDateString('en-US', options))
+                    const options = { month: 'short', day: 'numeric' };
+                    setEnrolledDate(course.enrolledAt
+                        ? new Date(course.enrolledAt).toLocaleDateString()
+                        : "Chưa đăng ký")
                     return
                 }
             })
@@ -147,13 +149,39 @@ const CourseDetail = () => {
                 }
             );
             console.log(response.data);
-            sweetalert("Success", "Enrollment successful!", "success");
+            sweetalert("Success", "Enrollment successful!", "success")
+            setIsEnroll(true)
         } catch (error) {
             console.error("Enrollment error:", error);
             sweetalert("Error", error.response?.data?.message || "Enrollment failed!", "error");
         }
     };
 
+    const handleLeave = async () => {
+        sweetalert({
+            title: "Are you sure you want to leave the class?",
+            icon: "warning",
+            buttons: ["Cancel", "Yes, leave class!"],
+            dangerMode: true,
+        }).then(async (willLeave) => {
+            if (willLeave) {
+                try {
+                    const response = await axios.delete(`${API_BASE_URL}/enrollment/${cid}`, {
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`
+                        },
+                        withCredentials: true
+                    });
+
+                    console.log(response);
+                    sweetalert("Success!", "You have successfully left the class.", "success");
+                    setIsEnroll(false); // Update UI immediately
+                } catch (error) {
+                    sweetalert("Error", error.response?.data?.message || "Failed to leave the class!", "error");
+                }
+            }
+        });
+    };
 
 
     // Function to download file using the provided download link
@@ -266,16 +294,30 @@ const CourseDetail = () => {
                                 <p>
                                     {course.description}
                                 </p>
-                                {role == 'student' && (<button className='btn btn-primary mb-3' disabled={isEnroll ? true : false} onClick={accessToken ? handleEnroll : handleShow}>
-                                    <p style={{ marginBottom: "-7px" }}>{isEnroll ? 'Enrolled' : 'Enroll'}</p>
-                                    {/* <br /> */}
-                                    <span style={{ fontSize: '12px' }}> {isEnroll ? `At ${enrolledDate}` : `Starts ${currentDate}`}</span>
-                                </button>)}
+                                <div style={{ alignItems: 'center', justifyContent: 'center' }}>
+                                    {role == 'student' && (<button className='btn btn-primary mb-3' disabled={isEnroll ? true : false} onClick={accessToken ? handleEnroll : handleShow}>
+                                        <p style={{ marginBottom: "-7px" }}>{isEnroll ? 'Enrolled' : 'Enroll'}</p>
+                                        {/* <br /> */}
+                                        <span style={{ fontSize: '12px' }}> {isEnroll ? `At ${enrolledDate}` : `Starts ${currentDate}`}</span>
+                                    </button>)}
+
+                                    {role == 'student' && isEnroll && (
+                                        <Button
+                                            variant='danger'
+                                            style={{ marginLeft: '30px', marginBottom: '15px' }}
+                                            onClick={handleLeave}
+                                        >
+                                            Leave Course
+                                        </Button>
+                                    )}
+
+                                </div>
+
 
                                 {/* Course Content */}
                                 <h2 className="mb-4">Course Content</h2>
 
-
+                                {/* Letures Content */}
                                 <Accordion>
                                     {Array.isArray(lectures) && lectures.length > 0 ? (
                                         lectures.map((lecture, index) => (
@@ -308,6 +350,7 @@ const CourseDetail = () => {
                                 </Accordion>
                             </div>
                         </div>
+
                         <div className="col-lg-4 mt-5 mt-lg-0">
                             {/* Author Bio */}
                             <div className="d-flex flex-column text-center bg-dark rounded mb-5 py-5 px-4">
@@ -318,9 +361,7 @@ const CourseDetail = () => {
                                     alt="Teacher"
                                 />
                                 <h3 className="text-primary mb-3">{teacherName}</h3>
-                                <h3 className="text-uppercase mb-4" style={{ letterSpacing: 5 }}>
-                                    Tag Cloud
-                                </h3>
+
                                 <p className="text-white m-0">
                                     Conset elitr erat vero dolor ipsum et diam, eos dolor lorem, ipsum
                                     sit no ut est ipsum erat kasd amet elitr
