@@ -58,12 +58,13 @@ export default function Courses() {
             <div className="container-fluid py-5">
                 <div className="container py-5">
                     <div className="text-center mb-5">
-                        <h1
+                        <h4
                             className="text-primary text-uppercase mb-3"
-                            style={{ fontSize: '30px' }}
+                            style={{ letterSpacing: 5 }}
                         >
                             Courses
-                        </h1>
+                        </h4>
+                        <h1>Our Popular Courses</h1>
                     </div>
 
                     {/* Course List */}
@@ -94,16 +95,16 @@ export default function Courses() {
                             </div>
                         ))}
                     </div>
-                    
+
                     {/* Pagination - Đã được cải thiện */}
                     <div className="d-flex justify-content-center mt-4">
                         <Pagination>
-                           
-                            <Pagination.Prev 
-                                onClick={() => handlePageChange(currentPage - 1)} 
+
+                            <Pagination.Prev
+                                onClick={() => handlePageChange(currentPage - 1)}
                                 disabled={currentPage === 1}
                             />
-                            
+
                             {/* Hiển thị các số trang */}
                             {[...Array(totalPages)].map((_, index) => (
                                 <Pagination.Item
@@ -114,12 +115,12 @@ export default function Courses() {
                                     {index + 1}
                                 </Pagination.Item>
                             ))}
-                            
-                            <Pagination.Next 
-                                onClick={() => handlePageChange(currentPage + 1)} 
+
+                            <Pagination.Next
+                                onClick={() => handlePageChange(currentPage + 1)}
                                 disabled={currentPage === totalPages}
                             />
-                         
+
                         </Pagination>
                     </div>
                 </div>

@@ -154,7 +154,7 @@ const getUserClasses = asyncHandler(async (req, res) => {
         response = await Enrollment.find({ student: _id })
             .populate({
                 path: 'classId',
-                select: 'createdBy title lectures',
+                select: 'createdBy title lectures image',
                 populate: {
                     path: 'createdBy',
                     select: 'name'  // Lấy thêm tên của giáo viên tạo lớp
@@ -164,7 +164,7 @@ const getUserClasses = asyncHandler(async (req, res) => {
     else {
         // Nếu là giáo viên, lấy danh sách lớp mà họ đã tạo
         response = await Class.find({ createdBy: _id })
-            .select('title lectures students')
+            .select('title lectures students image')
             .populate({
                 path: 'createdBy',
                 select: 'name email' 

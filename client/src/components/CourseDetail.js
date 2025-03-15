@@ -21,7 +21,8 @@ const CourseDetail = () => {
     const [password, setPassword] = useState("");
     const [accessToken, setAccessToken] = useState(localStorage.getItem('accessToken'))
     const [role, setRole] = useState(localStorage.getItem('role'))
-    const [userCourses, setUserCourses] = useState([])
+    // const [teacherCourses, setTeacherCourses] = useState([])
+    const [studentCourses, setStudentCourses] = useState([])
     const [isEnroll, setIsEnroll] = useState(false)
     const [enrolledDate, setEnrolledDate] = useState('')
 
@@ -46,6 +47,8 @@ const CourseDetail = () => {
         setCurrentDate(today.toLocaleDateString('en-US', options)); // Format: "Mar 13"
 
         const fetchUserClass = async () => {
+            if (role == 'teacher')
+                return
             try {
                 const response = await axios.get(`${API_BASE_URL}/enrollment/my-classes`,
                     {
@@ -56,7 +59,7 @@ const CourseDetail = () => {
                     }
                 );
 
-                setUserCourses(response.data.userClass)
+                setStudentCourses(response.data.userClass)
                 // console.log();
 
             } catch (error) {
@@ -69,7 +72,10 @@ const CourseDetail = () => {
         fetchUserClass()
 
         const checkEnroll = () => {
-            userCourses.map(course => {
+            if (role == 'teacher')
+                return
+
+            studentCourses.map(course => {
                 console.log(course.student);
 
                 if (course.classId._id == cid) {
@@ -84,23 +90,19 @@ const CourseDetail = () => {
     }, [cid, accessToken]);
 
     useEffect(() => {
-        if (userCourses.length > 0) {
-            userCourses.forEach(course => {
-                if (course.classId._id === cid) {
-                    setIsEnroll(true);
-                    const options = { month: 'short', day: 'numeric' };
-                    setEnrolledDate(new Date(course.enrolledAt).toLocaleDateString('en-US', options));
-                }
-            });
+        if (role == "student") {
+            if (studentCourses.length > 0) {
+                studentCourses.map(course => {
+                    if (course.classId._id === cid) {
+                        setIsEnroll(true);
+                        const options = { month: 'short', day: 'numeric' };
+                        setEnrolledDate(new Date(course.enrolledAt).toLocaleDateString('en-US', options));
+                    }
+                });
+            }
         }
-    }, [userCourses]);
+    }, [studentCourses]);
     // console.log(accessToken);
-
-    console.log(userCourses);
-
-
-
-
 
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
@@ -278,30 +280,30 @@ const CourseDetail = () => {
                                     {Array.isArray(lectures) && lectures.length > 0 ? (
                                         lectures.map((lecture, index) => (
                                             <Accordion.Item eventKey={index.toString()} key={`lecture-${index}`}>
-                                        <Accordion.Header>{lecture.title}</Accordion.Header>
-                                        <Accordion.Body style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>
-                                                {lecture.content}
-                                            </div>
-                                            {lecture.file && (
-                                                <div>
-                                                    <button className='btn btn-primary'
-                                                        onClick={() => handleDownload(lecture)}
-                                                        title={getFileDisplayName(lecture)}
-                                                    >
-                                                        <i className="bi bi-download" style={{ marginRight: '8px' }}></i>
-                                                        Download file
-                                                        {/* {lecture.originalFileName && 
+                                                <Accordion.Header>{lecture.title}</Accordion.Header>
+                                                <Accordion.Body style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <div>
+                                                        {lecture.content}
+                                                    </div>
+                                                    {lecture.file && (
+                                                        <div>
+                                                            <button className='btn btn-primary'
+                                                                onClick={() => handleDownload(lecture)}
+                                                                title={getFileDisplayName(lecture)}
+                                                            >
+                                                                <i className="bi bi-download" style={{ marginRight: '8px' }}></i>
+                                                                Download file
+                                                                {/* {lecture.originalFileName && 
                                                                     <span className="ms-1">({getFileDisplayName(lecture)})</span>
                                                                 } */}
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </Accordion.Body>
-                                    </Accordion.Item>
-                                    ))
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </Accordion.Body>
+                                            </Accordion.Item>
+                                        ))
                                     ) : (
-                                    <p>No lectures available for this course.</p>
+                                        <p>No lectures available for this course.</p>
                                     )}
                                 </Accordion>
                             </div>
