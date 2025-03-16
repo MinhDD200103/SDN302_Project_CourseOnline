@@ -276,6 +276,7 @@ const CourseDetail = () => {
                             <i className="bi bi-chevron-double-right" style={{ marginLeft: "10px", marginRight: '10px' }}></i>
                             <p className="m-0 text-uppercase">Detail</p>
                         </div>
+                    
                     </div>
                 </div>
             </div>

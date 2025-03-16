@@ -8,23 +8,35 @@ export default function Courses() {
     const [classes, setClasses] = useState([])
     const [totalPages, setTotalPages] = useState(0)
     const [currentPage, setCurrentPage] = useState(1) // Đặt giá trị mặc định là 1 thay vì 0
-    // const [limit, setLimit] = useState(6) // Thêm state cho limit, mặc định hiển thị 6 khóa học mỗi trang
+    const [limit, setLimit] = useState(3) // Thêm state cho limit, mặc định hiển thị 6 khóa học mỗi trang
+    const [title, setTitle] = useState('')
+
+    const fetchClasses = async () => {
+        try {
+            let query = `${API_BASE_URL}/class?page=${currentPage}&limit=${limit}`
+            if (title.trim() !== "")
+                query += `&title=${title}`;
+            console.log(query);
+            console.log(title);
+
+            const response = await axios.get(query)
+            console.log(response.data);
+            setClasses(response.data.classes)
+            setCurrentPage(response.data.currentPage);
+            setTotalPages(response.data.totalPages);
+        } catch (error) {
+            console.error('Error fetching classes:', error)
+        }
+    }
 
     useEffect(() => {
-        const fetchClasses = async () => {
-            try {
-                const response = await axios.get(`${API_BASE_URL}/class?page=${currentPage}`)
-                console.log(response.data);
-                setClasses(response.data.classes)
-                setCurrentPage(response.data.currentPage);
-                setTotalPages(response.data.totalPages);
-            } catch (error) {
-                console.error('Error fetching classes:', error)
-            }
-        }
-
         fetchClasses()
-    }, [currentPage]) // Thêm limit vào dependencies
+    }, [currentPage, limit]) // Thêm limit vào dependencies
+
+    const handleSearch = () => {
+        setCurrentPage(1); // Reset về trang 1 khi tìm kiếm
+        fetchClasses();
+    };
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
@@ -44,12 +56,44 @@ export default function Courses() {
                         <h3 className="display-4 text-white text-uppercase">Courses</h3>
                         <div className="d-inline-flex text-white">
                             <p className="m-0 text-uppercase">
-                                <Link className="text-white" to="/">
-                                    Home
-                                </Link>
+                                <Link className="text-white" to="/">Home</Link>
                             </p>
-                            <i className="bi bi-chevron-double-right" style={{ marginLeft: "10px", marginRight: '10px' }}></i>
-                            <p className="m-0 text-uppercase">Courses</p>
+                            <i className="bi bi-chevron-double-right" style={{ margin: "0 10px" }}></i>
+                            <p className="m-0 text-uppercase">
+                                <Link className="text-white" to="/course">Courses</Link>
+                            </p>
+                            <i className="bi bi-chevron-double-right" style={{ margin: "0 10px" }}></i>
+                            <p className="m-0 text-uppercase">Detail</p>
+                        </div>
+                        {/* Search Box */}
+                        <div className="d-flex align-items-center position-relative mt-4">
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder="What do you want to learn?"
+                                style={{
+                                    maxWidth: "400px",
+                                    borderRadius: "50px",
+                                    padding: "22px 27px",
+                                    paddingRight: "50px",
+                                }}
+                                onChange={(e) => setTitle(e.target.value)}
+                            />
+                            <button
+                                className="btn btn-primary position-absolute"
+                                style={{
+                                    borderRadius: "50%",
+                                    width: "40px",
+                                    height: "40px",
+                                    left: '355px',
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                                onClick={handleSearch}
+                            >
+                                <i className="bi bi-search"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
