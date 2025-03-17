@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import API_BASE_URL from '../config/config';
-// import Swal from 'sweetalert2';
 import sweetalert from 'sweetalert'
 import { Button, Form, Modal, Accordion } from "react-bootstrap";
 import API from "../axiosConfig";
@@ -20,17 +19,16 @@ const CourseDetail = () => {
     const [password, setPassword] = useState("");
     const [accessToken, setAccessToken] = useState(localStorage.getItem('accessToken'))
     const [role, setRole] = useState(localStorage.getItem('role'))
-    // const [teacherCourses, setTeacherCourses] = useState([])
     const [studentCourses, setStudentCourses] = useState([])
     const [isEnroll, setIsEnroll] = useState(false)
     const [enrolledDate, setEnrolledDate] = useState('')
 
     const navigate = useNavigate()
+    
     useEffect(() => {
         const fetchClass = async () => {
             try {
                 const response = await axios.get(`${API_BASE_URL}/class/${cid}`);
-                // console.log(response.data.class.lectures);
                 setLectures(response.data.class.lectures);
                 setCourse(response.data.class);
                 setTeacherName(response.data.class.createdBy.name);
@@ -43,7 +41,7 @@ const CourseDetail = () => {
 
         const today = new Date();
         const options = { month: 'short', day: 'numeric' };
-        setCurrentDate(today.toLocaleDateString('en-US', options)); // Format: "Mar 13"
+        setCurrentDate(today.toLocaleDateString('en-US', options));
 
         const fetchUserClass = async () => {
             if (role == 'teacher' || role == null)
@@ -59,42 +57,18 @@ const CourseDetail = () => {
                 );
 
                 setStudentCourses(response.data.userClass)
-                // console.log();
-
             } catch (error) {
                 console.log("Cannot get class from server", error);
             }
-
-
         }
 
         fetchUserClass()
-
-        const checkEnroll = () => {
-            if (role == 'teacher')
-                return
-
-            studentCourses.map(course => {
-                console.log(course.student);
-
-                if (course.classId._id == cid) {
-                    setIsEnroll(true)
-                    const options = { month: 'short', day: 'numeric' };
-                    setEnrolledDate(course.enrolledAt
-                        ? new Date(course.enrolledAt).toLocaleDateString()
-                        : "Chưa đăng ký")
-                    return
-                }
-            })
-        }
-        checkEnroll()
-
-    }, [cid, accessToken]);
+    }, [cid, accessToken, role]);
 
     useEffect(() => {
         if (role == "student") {
             if (studentCourses.length > 0) {
-                studentCourses.map(course => {
+                studentCourses.forEach(course => {
                     if (course.classId._id === cid) {
                         setIsEnroll(true);
                         const options = { month: 'short', day: 'numeric' };
@@ -103,8 +77,7 @@ const CourseDetail = () => {
                 });
             }
         }
-    }, [studentCourses]);
-    console.log(accessToken);
+    }, [studentCourses, cid, role]);
 
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
@@ -114,17 +87,22 @@ const CourseDetail = () => {
             const response = await API.post("/user/login", { email, password });
 
             if (response.data.success) {
-                localStorage.setItem("accessToken", response.data.accessToken);
+                // Save token to localStorage
+                const newToken = response.data.accessToken;
+                localStorage.setItem("accessToken", newToken);
                 localStorage.setItem("email", response.data.userData.email);
-                // localStorage.setItem("avatar", response.data.userData.avatar);
-                setAccessToken(localStorage.getItem('accessToken'))
-                const decodedToken = jwtDecode(accessToken)
-                localStorage.setItem('role', decodedToken.role)
-                setRole(localStorage.getItem('role'))
+                
+                // Decode the token we just received
+                const decodedToken = jwtDecode(newToken);
+                localStorage.setItem('role', decodedToken.role);
+                
+                // Update local state
+                setAccessToken(newToken);
+                setRole(decodedToken.role);
 
                 sweetalert("Success", "Login successfully!", "success").then(() => {
                     handleClose();
-                    navigate(`/course/${cid}`)
+                    navigate(`/course/${cid}`);
                 });
 
                 setEmail("");
@@ -135,26 +113,29 @@ const CourseDetail = () => {
         }
     };
 
-
     const handleEnroll = async () => {
         if(!accessToken){
             setShow(true)
+            return;
         }
         try {
             const response = await axios.post(`${API_BASE_URL}/enrollment/${cid}`,
                 {},
                 {
                     headers: {
-                        Authorization: `Bearer ${accessToken}`,  // Gửi token chính xác
-                        // "Content-Type": "application/json"
+                        Authorization: `Bearer ${accessToken}`,
                     },
-                    withCredentials: true // Nếu backend yêu cầu cookie
+                    withCredentials: true
                 }
             );
             
-            console.log(response.data);
             sweetalert("Success", "Enrollment successful!", "success")
-            setIsEnroll(true)
+            setIsEnroll(true);
+            
+            // Update enrolled date
+            const today = new Date();
+            const options = { month: 'short', day: 'numeric' };
+            setEnrolledDate(today.toLocaleDateString('en-US', options));
         } catch (error) {
             console.error("Enrollment error:", error);
             sweetalert("Error", error.response?.data?.message || "Enrollment failed!", "error");
@@ -177,32 +158,14 @@ const CourseDetail = () => {
                         withCredentials: true
                     });
 
-                    console.log(response);
                     sweetalert("Success!", "You have successfully left the class.", "success");
-                    setIsEnroll(false); // Update UI immediately
+                    setIsEnroll(false);
                 } catch (error) {
                     sweetalert("Error", error.response?.data?.message || "Failed to leave the class!", "error");
                 }
             }
         });
     };
-
-
-    // Function to download file using the provided download link
-    // const handleDownload = (downloadLink, originalFileName) => {
-    //     if (!downloadLink) {
-    //         console.error("Download link not available");
-    //         return;
-    //     }
-
-    //     // Tạo thẻ `<a>` ẩn để tải file về với đúng tên file
-    //     const link = document.createElement("a");
-    //     link.href = downloadLink;
-    //     link.setAttribute("download", originalFileName); // Giữ đúng định dạng file
-    //     document.body.appendChild(link);
-    //     link.click();
-    //     document.body.removeChild(link);
-    // };
 
     const handleDownload = async (lecture) => {
         if (!accessToken) {
@@ -214,7 +177,6 @@ const CourseDetail = () => {
             sweetalert("Error", "You need to enroll course to download", "error");
             return
         }
-
 
         if (!lecture.downloadLink) {
             console.error("Download link not available");
@@ -232,11 +194,10 @@ const CourseDetail = () => {
             const link = document.createElement('a');
 
             link.href = url;
-            link.setAttribute('download', lecture.originalFileName || 'downloaded_file'); // Giữ đúng tên file
+            link.setAttribute('download', lecture.originalFileName || 'downloaded_file');
             document.body.appendChild(link);
             link.click();
 
-            // Giải phóng URL sau khi tải xong
             window.URL.revokeObjectURL(url);
             document.body.removeChild(link);
         } catch (error) {
@@ -244,12 +205,10 @@ const CourseDetail = () => {
         }
     };
 
-    // Function to get a display name for the file
     const getFileDisplayName = (lecture) => {
         if (lecture.originalFileName) {
             return lecture.originalFileName;
         } else {
-            // If no original filename, create one from the title
             const fileExtension = lecture.file ? lecture.file.split('.').pop() : 'pdf';
             return `${lecture.title}.${fileExtension}`;
         }
@@ -301,9 +260,8 @@ const CourseDetail = () => {
                                 </p>
                                 <div style={{ alignItems: 'center', justifyContent: 'center' }}>
                                     {(role == 'student' || role == null) && (<button className='btn btn-primary mb-3' disabled={isEnroll ? true : false} onClick={accessToken ? handleEnroll : handleShow}>
-                                        <p style={{ marginBottom: "-7px" }}>{isEnroll ? 'Enrolled' : 'Enroll'}</p>
-                                        {/* <br /> */}
-                                        <span style={{ fontSize: '12px' }}> {isEnroll ? `At ${enrolledDate}` : `Starts ${currentDate}`}</span>
+                                        <p style={{ marginBottom: "0px" }}>{isEnroll ? 'Enrolled' : 'Enroll'}</p>
+                                        {/* <span style={{ fontSize: '12px' }}> {isEnroll ? `At ${enrolledDate}` : `Starts ${currentDate}`}</span> */}
                                     </button>)}
 
                                     {role == 'student' && isEnroll && (
@@ -340,9 +298,6 @@ const CourseDetail = () => {
                                                             >
                                                                 <i className="bi bi-download" style={{ marginRight: '8px' }}></i>
                                                                 Download file
-                                                                {/* {lecture.originalFileName && 
-                                                                    <span className="ms-1">({getFileDisplayName(lecture)})</span>
-                                                                } */}
                                                             </button>
                                                         </div>
                                                     )}
