@@ -276,7 +276,7 @@ const CourseDetail = () => {
                             <i className="bi bi-chevron-double-right" style={{ marginLeft: "10px", marginRight: '10px' }}></i>
                             <p className="m-0 text-uppercase">Detail</p>
                         </div>
-                    
+
                     </div>
                 </div>
             </div>
@@ -349,6 +349,22 @@ const CourseDetail = () => {
                                         <p>No lectures available for this course.</p>
                                     )}
                                 </Accordion>
+
+                                <div style={{ marginTop: '30px' }}>
+                                    <Button
+                                        variant='success'
+                                        style={{ marginRight: '20px' }}
+                                        as={Link}
+                                        to={`/update-course/${cid}`}
+                                    >Update Course
+                                    </Button>
+                                    <Button
+                                        variant='warning'
+                                        style={{ color: 'white' }}
+                                        as={Link}
+                                        to={`/view-student/${cid}`}
+                                    >View Student</Button>
+                                </div>
                             </div>
                         </div>
 

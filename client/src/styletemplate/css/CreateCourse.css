@@ -1,0 +1,173 @@
+.register-car-page-container{
+    background-color: #f6f6f6;
+    padding-top: 50px;
+}
+
+.card-header-container{
+    padding: 20px;
+    color: black;
+    border-bottom: 4px solid #e0e0e0;
+}
+
+.card-header-container ul {
+    list-style: none;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+.circle-option-active{
+    background-color: #FF6600;
+    border-radius: 100%;
+    width: 60px;
+    height: 60px;
+    color: white;
+    font-weight: 500;
+    text-align: center;
+    padding-top: 17px;
+}
+
+.circle-option-deactive{
+    background-color: #e6ecf1;
+    border-radius: 100%;
+    width: 60px;
+    height: 60px;
+    color: black;
+    font-weight: 500;
+    text-align: center;
+    padding-top: 17px;
+}
+
+.bi-chevron-right{
+    color: black;
+}
+
+.card-body-container{
+    color: black;
+    
+}
+
+.card-footer-container{
+    display: flex;
+    justify-content: space-between;
+    border-top: none;
+    background-color: #f6f6f6;
+}
+
+.footer-btn{
+    padding: 16px 24px;
+    width: 200px;
+    margin-top: 15px;
+    margin-bottom: 30px;
+}
+
+/* CarInformation css start from here*/
+
+.car-infor-container{
+    width: 90%;
+    margin: auto;
+    margin-top: 20px;
+}
+
+.car-register-title{
+    font-size: 21px;
+    color: black;
+}
+
+.note{
+    font-size: 14px;
+    color: red;
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 30px;
+}
+
+.script{
+    font-size: 14px;
+    color: grey;
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 30px;
+}
+
+.form-lable-basic-infor{
+    font-size: 15px;
+    color: black;
+}
+
+.card-fnc-selected, .card-fnc-nonselected{
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.card-fnc-selected{
+    border: 1px solid green;
+}
+
+.card-fnc-nonselected{
+    border: 1px solid #e0e0e0;
+}
+
+.card-fnc-text-container{
+    color: black;
+    text-align: center;
+    height: 75px;
+    padding: 10px;
+}
+
+/* CarHired css start from here */
+
+.car-price-container{
+    display: flex;
+    align-items: center;
+    margin-bottom: 35px;
+}
+
+/* CarImages css start from here */
+
+
+.upload-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    border: 2px dashed #8dd7a8;
+    border-radius: 10px;
+    height: 300px;
+    cursor: pointer;
+    color: #8dd7a8;
+    text-align: center;
+    position: relative;
+    overflow: hidden; /* Ensures the image doesn't overflow the container */
+  }
+  
+  .upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+  }
+  
+  .bi-cloud-arrow-up {
+    font-size: 48px;
+    margin-bottom: 10px;
+  }
+  
+  .preview-box {
+    position: absolute; /* Ensures it overlays the container */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+  }
+  
+  .preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures the image scales correctly */
+    border-radius: 10px; /* Matches the container's rounded corners */
+  }
