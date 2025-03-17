@@ -21,7 +21,7 @@ export default function Header() {
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
- 
+
 
   const handleLogin = async () => {
     try {
@@ -96,6 +96,12 @@ export default function Header() {
                   {accessToken && (
                     <Link to="/my-course" className={`nav-item nav-link ${path === "/my-course" ? "active" : ""}`}>
                       My Courses
+                    </Link>
+                  )}
+
+                  {accessToken && localStorage.getItem('role') == 'teacher' && (
+                    <Link to="/create" className={`nav-item nav-link ${path === "/create" ? "active" : ""}`}>
+                      Create Course
                     </Link>
                   )}
                 </div>

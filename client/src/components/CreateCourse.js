@@ -1,83 +1,401 @@
-import { Container, Row, Col, Card, Button, Form, Image } from "react-bootstrap";
-import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { Container, Row, Col, Card, Button, Form, Accordion } from "react-bootstrap";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import '../styletemplate/css/CreateCourse.css'
+import sweetalert from 'sweetalert'
+import axios from 'axios';
+import API_BASE_URL from '../config/config';
+import { jwtDecode } from "jwt-decode";
 
 export default function CreateCourse() {
-
+    const navigate = useNavigate(); // For redirecting after successful submission
     const [page, setPage] = useState(0);
+    const [loading, setLoading] = useState(false); // Add loading state
+    // const [error, setError] = useState(null); // Add error state
+    const [accessToken, setAccessToken] = useState(localStorage.getItem('accessToken') || '');
+    const [userId, setUserId] = useState('');
+
+    // console.log(accessToken);
+
+    useEffect(() => {
+        try {
+            // Only attempt to decode if we have a token
+            if (accessToken && typeof accessToken === 'string' && accessToken.trim() !== '') {
+                const decoded = jwtDecode(accessToken);
+                setUserId(decoded?._id || '');
+                console.log('User id', decoded?._id);
+            } else {
+                // Handle case where no valid token exists
+                console.log('No valid token found');
+                // Optional: Redirect to login
+                // navigate('/login');
+            }
+        } catch (error) {
+            console.error('Error decoding token:', error);
+            // Handle invalid token (e.g., clear it and redirect to login)
+            localStorage.removeItem('accessToken');
+            setAccessToken('');
+            // Optional: Redirect to login
+            // navigate('/login');
+        }
+    }, [accessToken, navigate]);
+
 
     const [formData, setFormData] = useState({
-        //trang 1
-        licensePlate: '', //Biển số xe
-        brand: '',
-        model: '',
-        color: '',
-        seats: 4,
-        productionYear: 2024,
-        transmissionType: 'Số tự động', //Số sàn hoặc số tự động
-        fuelType: 'Xăng',
-        fuelConsumption: '10',
+        // Trang 1
+        title: '',
         description: '',
-        additionalFunction: [],
-        //trang 2
-        mileage: 0, //Số quãng đường đã đi đc
-        price: 470,
-        deposit: 0,
-        address: '',
-        termOfUse: '',
-        //trang 3
-        images: {},
-        //tạm thời cho mặc định
-        carOwner: 'Minh'
+        // Trang 2
+        lectures: [{
+            title: '',
+            file: null,
+            content: ''
+        }],
+        // Trang 3
+        image: null,
+        // Tạm thời cho mặc định
+        createdBy: ''
     });
+    useEffect(() => {
+        if (userId) {
+            setFormData(prev => ({
+                ...prev,
+                createdBy: userId
+            }));
+        }
+    }, [userId]);
 
     const [newFormData, setNewFormData] = useState({ ...formData });
 
-    // const handleChangeForm = (e) => {
-    //     setNewFormData({ ...newFormData, [e.target.name]: e.target.value });
-    // }
+    useEffect(() => {
+        setNewFormData({ ...formData });
+    }, [formData]);
 
-    const handleChangeForm = (e) => {
-        const { name, value, type } = e.target;
+    //Claude
+    // const submitForm = async () => {
+    //     // Check for required fields
+    //     if (!newFormData.title) {
+    //         // setError("Course title is required");
+    //         sweetalert("Error", "Course title is required", "error");
+    //         setPage(0)
+    //         return;
+    //     }
 
-        setNewFormData((prev) => ({
-            ...prev,
-            [name]:
-                type === "number" || (!isNaN(value) && ["seats", "productionYear", "price", "deposit", "mileage"].includes(name))
-                    ? +value : value
-        }));
+    //     // Validate lectures
+    //     if (!newFormData.lectures || newFormData.lectures.length === 0) {
+    //         // setError("A class must have at least one lecture");
+    //         sweetalert("Error", "A class must have at least one lecture", "error");
+    //         setPage(1)
+    //         return;
+    //     }
+
+    //     for (let i = 0; i < newFormData.lectures.length; i++) {
+    //         if (!newFormData.lectures[i].title) {
+    //             // setError(`Lecture ${i + 1} must have a title`);
+    //             sweetalert("Error", `Lecture #${i + 1} must have a title`, "error");
+    //             return;
+    //         }
+    //     }
+
+    //     setLoading(true);
+    //     // setError(null);
+
+    //     try {
+    //         // Create FormData object
+    //         const formDataToSend = new FormData();
+    //         formDataToSend.append("title", newFormData.title);
+    //         formDataToSend.append("description", newFormData.description || "");
+
+    //         // Add course image if available
+    //         if (newFormData.image) {
+    //             formDataToSend.append("image", newFormData.image);
+    //         }
+
+    //         console.log(formDataToSend);
+
+
+    //         // Add lectures as JSON string
+    //         const lecturesData = newFormData.lectures.map(lecture => ({
+    //             title: lecture.title,
+    //             content: lecture.content || ""
+    //         }));
+
+    //         formDataToSend.append("lectures", JSON.stringify(lecturesData));
+
+    //         // Add lecture files
+    //         newFormData.lectures.forEach((lecture, index) => {
+    //             if (lecture.file) {
+    //                 formDataToSend.append("lectureFiles", lecture.file);
+    //             }
+    //         });
+
+    //         // Make API call
+    //         // const response = await axios.post(`${API_BASE_URL}/class`, formDataToSend, {
+    //         //     headers: {
+    //         //         'Content-Type': 'multipart/form-data',
+    //         //         // Include authorization header if using JWT
+    //         //         'Authorization': `Bearer ${accessToken}`,
+
+    //         //     },
+    //         //     withCredentials: true
+    //         // });
+
+    //         const response = await axios.post(`${API_BASE_URL}/class`, formDataToSend,
+    //             {
+    //                 headers: {
+    //                     Authorization: `Bearer ${accessToken}`,
+    //                     // Don't set Content-Type for FormData - browser will set it with boundary
+    //                 },
+    //                 withCredentials: true
+    //             }
+    //         );
+
+    //         // Handle successful response
+    //         console.log("Course created successfully:", response.data);
+
+    //         // Reset form and show success message
+    //         setNewFormData({ ...formData });
+    //         setPage(0)
+    //         sweetalert("Success", "Course created successfully!", "success")
+    //         // alert("Course created successfully!");
+
+    //         // Redirect to courses page or the newly created course
+    //         // navigate('/course');
+
+    //     } catch (err) {
+    //         // Handle errors
+    //         sweetalert("Error", err.response?.data?.message || "Failed to create course", "error");
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
+    //ChatGPT
+
+    // const submitForm = async () => {
+    //     // Kiểm tra các trường bắt buộc
+    //     if (!newFormData.title) {
+    //         sweetalert("Error", "Course title is required", "error");
+    //         setPage(0);
+    //         return;
+    //     }
+
+    //     if (!newFormData.lectures || newFormData.lectures.length === 0) {
+    //         sweetalert("Error", "A class must have at least one lecture", "error");
+    //         setPage(1);
+    //         return;
+    //     }
+
+    //     for (let i = 0; i < newFormData.lectures.length; i++) {
+    //         if (!newFormData.lectures[i].title) {
+    //             sweetalert("Error", `Lecture #${i + 1} must have a title`, "error");
+    //             return;
+    //         }
+    //     }
+
+    //     setLoading(true);
+
+    //     try {
+    //         // Chuẩn bị dữ liệu JSON để gửi
+    //         const requestData = {
+    //             title: newFormData.title,
+    //             description: newFormData.description || "",
+    //             lectures: newFormData.lectures.map(lecture => ({
+    //                 title: lecture.title,
+    //                 content: lecture.content || ""
+    //             }))
+    //         };
+
+    //         // Gửi API request với JSON
+    //         const response = await axios.post(`${API_BASE_URL}/class`, requestData, {
+    //             headers: {
+    //                 "Content-Type": "application/json",
+    //                 Authorization: `Bearer ${accessToken}`
+    //             },
+    //             withCredentials: true
+    //         });
+
+    //         // Xử lý khi tạo lớp học thành công
+    //         console.log("Course created successfully:", response.data);
+    //         setNewFormData({ ...formData });
+    //         setPage(0);
+    //         sweetalert("Success", "Course created successfully!", "success");
+    //     } catch (err) {
+    //         sweetalert("Error", err.response?.data?.message || "Failed to create course", "error");
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
+
+    const submitForm = async () => {
+        // Validation checks
+        if (!newFormData.title) {
+            sweetalert("Error", "Course title is required", "error");
+            setPage(0);
+            return;
+        }
+
+        if (!newFormData.lectures || newFormData.lectures.length === 0) {
+            sweetalert("Error", "A class must have at least one lecture", "error");
+            setPage(1);
+            return;
+        }
+
+        for (let i = 0; i < newFormData.lectures.length; i++) {
+            if (!newFormData.lectures[i].title) {
+                sweetalert("Error", `Lecture #${i + 1} must have a title`, "error");
+                return;
+            }
+        }
+
+        setLoading(true);
+
+        try {
+            // Create FormData object for multipart/form-data upload
+            const formDataToSend = new FormData();
+
+            // Add basic course information
+            formDataToSend.append("title", newFormData.title);
+            formDataToSend.append("description", newFormData.description || "");
+            formDataToSend.append("createdBy", newFormData.createdBy);
+
+            // Add course image if available
+            if (newFormData.image) {
+                formDataToSend.append("image", newFormData.image);
+            }
+
+            // Add lectures as JSON string
+            const lecturesData = newFormData.lectures.map(lecture => ({
+                title: lecture.title,
+                content: lecture.content || ""
+            }));
+
+            formDataToSend.append("lectures", JSON.stringify(lecturesData));
+
+            // Add lecture files
+            newFormData.lectures.forEach((lecture, index) => {
+                if (lecture.file) {
+                    formDataToSend.append("lectureFiles", lecture.file);
+                }
+            });
+
+            // Make API call with FormData
+            const response = await axios.post(`${API_BASE_URL}/class`, formDataToSend, {
+                headers: {
+                    // Don't set Content-Type for FormData - browser will set it with boundary
+                    Authorization: `Bearer ${accessToken}`
+                },
+                withCredentials: true
+            });
+
+            console.log("Course created successfully:", response.data);
+            setNewFormData({ ...formData });
+            setPage(0);
+            sweetalert("Success", "Course created successfully!", "success");
+        } catch (err) {
+            sweetalert("Error", err.response?.data?.message || "Failed to create course", "error");
+            console.error("Error creating course:", err);
+        } finally {
+            setLoading(false);
+        }
     };
 
+    const handleChangeForm = (e, index = null) => {
+        const { name, value } = e.target;
 
+        setNewFormData((prev) => {
+            if (index !== null) {
+                // Nếu đang cập nhật lecture
+                const updatedLectures = [...prev.lectures];
+                updatedLectures[index][name] = value;
+                return { ...prev, lectures: updatedLectures };
+            }
+            return { ...prev, [name]: value };
+        });
+    };
+
+    const handleFileChange = (e, index) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const allowedTypes = [
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation" // .pptx
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+            sweetalert("Error", "Only .docx, .pdf, and .pptx files are allowed.", 'error');
+            return;
+        }
+
+        setNewFormData((prev) => {
+            const updatedLectures = [...prev.lectures];
+            updatedLectures[index] = {
+                ...updatedLectures[index],
+                file: file  // Lưu trực tiếp file vào newFormData
+            };
+            return { ...prev, lectures: updatedLectures };
+        });
+    };
+
+    const handleImageChange = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            setNewFormData(prev => ({
+                ...prev,
+                image: file
+            }));
+        }
+    };
 
     const handleNextPage = () => {
         if (page === 2) {
-            alert(`Submit form: ${JSON.stringify(newFormData)}`);
-            setPage(0);
-            setNewFormData({ ...formData });
+            // Call API on final submission
+            submitForm();
         } else {
             setPage(page + 1);
         }
-
     };
+
 
     const handlePreviousPage = () => {
         setPage(page - 1);
+    };
 
-    }
+    const addLecture = () => {
+        setNewFormData(prev => ({
+            ...prev,
+            lectures: [...prev.lectures, { title: '', file: null }]
+        }));
+    };
+
+    const removeLecture = (index) => {
+
+        setNewFormData(prev => {
+            const updatedLectures = [...prev.lectures];
+            updatedLectures.splice(index, 1);
+            return { ...prev, lectures: updatedLectures };
+        });
+    };
 
     const renderPage = () => {
-
-
-
         switch (page) {
             case 0:
-                return <CarInformation newFormData={newFormData} handleChangeForm={handleChangeForm} />;
+                return <CourseInformation newFormData={newFormData} handleChangeForm={handleChangeForm} />;
             case 1:
-                return <CarHired newFormData={newFormData} handleChangeForm={handleChangeForm} />;
+                return (
+                    <LectureInformation
+                        newFormData={newFormData}
+                        handleChangeForm={handleChangeForm}
+                        handleFileChange={handleFileChange}
+                        addLecture={addLecture}
+                        removeLecture={removeLecture}
+                    />
+                );
             case 2:
-                return <CarImages newFormData={newFormData} handleChangeForm={handleChangeForm} />;
+                return <CourseImage newFormData={newFormData} handleImageChange={handleImageChange} />;
             default:
                 return null;
         }
@@ -89,379 +407,160 @@ export default function CreateCourse() {
 
     return (
         <>
-            <div className="container-fluid page-header" style={{ paddingBottom: 50 }}>
-                <div className="container">
-                    <div
-                        className="d-flex flex-column justify-content-center"
-                        style={{ minHeight: 300 }}
-                    >
-                        <h3 className="display-4 text-white text-uppercase">Courses</h3>
-                        <div className="d-inline-flex text-white">
-                            <p className="m-0 text-uppercase">
-                                <Link className="text-white" to="/">
-                                    Home
-                                </Link>
-                            </p>
-                            <i className="bi bi-chevron-double-right" style={{ marginLeft: "10px", marginRight: '10px' }}></i>
-                            <p className="m-0 text-uppercase">
-                                <Link className="text-white" to="/course">
-                                    Courses
-                                </Link>
-                            </p>
-                            <i className="bi bi-chevron-double-right" style={{ marginLeft: "10px", marginRight: '10px' }}></i>
-                            <p className="m-0 text-uppercase">Detail</p>
-                        </div>
 
-                    </div>
-                </div>
-            </div>
             <Container fluid className="register-car-page-container">
-                {/* <Row>
-                    <span style={{ marginLeft: '30px' }}>
-                        <i class="bi bi-chevron-left" ></i> &nbsp;
-                        <Link to={"/viewprofile/registercar"} style={{ color: 'black', textDecoration: 'none' }}>Quay lại</Link>
-                    </span>
-
-                </Row> */}
-
                 <Row>
                     <Col>
-                        <h2 style={{ textAlign: 'center', marginBottom: '40px', marginTop:'50px' }}>Create Course</h2>
+                        <h2 className="text-center my-4">Create Course</h2>
                     </Col>
                 </Row>
 
                 <Row>
                     <Col md={{ span: 8, offset: 2 }}>
                         <Card style={{ border: 'none', borderRadius: '0px' }}>
-                            <Card.Text className="card-header-container">
+                            <div className="card-header-container">
                                 <ul>
-                                    <li className={page == 0 ? "circle-option-active" : "circle-option-deactive"}>1
-                                    </li>
-                                    <li>
-                                        <i class="bi bi-chevron-right"></i>
-                                    </li>
-                                    <li className={page == 1 ? "circle-option-active" : "circle-option-deactive"}>2</li>
-                                    <li>
-                                        <i class="bi bi-chevron-right"></i>
-                                    </li>
-                                    <li className={page == 2 ? "circle-option-active" : "circle-option-deactive"}>3</li>
+                                    <li className={page === 0 ? "circle-option-active" : "circle-option-deactive"}>1</li>
+                                    <li><i className="bi bi-chevron-right"></i></li>
+                                    <li className={page === 1 ? "circle-option-active" : "circle-option-deactive"}>2</li>
+                                    <li><i className="bi bi-chevron-right"></i></li>
+                                    <li className={page === 2 ? "circle-option-active" : "circle-option-deactive"}>3</li>
                                 </ul>
+                            </div>
 
-                            </Card.Text>
-
-                            <Card.Text className="card-body-container">
-                                {renderPage()}
-                            </Card.Text>
+                            <Card.Text className="card-body-container">{renderPage()}</Card.Text>
 
                             <Card.Footer className="card-footer-container">
-                                <Button disabled={page == 0 ? true : false} onClick={handlePreviousPage} className="footer-btn">Previous</Button>
-                                <Button  onClick={handleNextPage} className="footer-btn ">{page == 2 ? "Submit" : "Next"}</Button>
+                                <Button disabled={page === 0} onClick={handlePreviousPage} className="footer-btn">Previous</Button>
+                                <Button onClick={handleNextPage} className="footer-btn">{page === 2 ? "Submit" : "Next"}</Button>
                             </Card.Footer>
-
-
                         </Card>
                     </Col>
                 </Row>
-
-
             </Container>
         </>
     );
 }
 
-function CarInformation({ newFormData, handleChangeForm }) {
-    const year = [2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014];
-
-    const numberOfSeats = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
-
-    const transmission = ["Số sàn", "Số tự động"];
-
-    const fuel = ["Xăng", "Dầu diesel", "Điện", "Xăng điện"];
-
-    const addFunction = [
-        { image: "/map.png", name: "Bản đồ" },
-        { image: "/bluetooth.png", name: "Bluetooth" },
-        { image: "/cam360.png", name: "Camera 360" },
-        { image: "/camht.png", name: "Camera hành trình" },
-        { image: "/gps.png", name: "Định vị GPS" },
-        { image: "/usb.png", name: "Khe cắm USB" }
-    ];
+function CourseInformation({ newFormData, handleChangeForm }) {
 
     console.log(newFormData);
-
-
-    const toggleSelect = (feature) => {
-        const updatedFunctions = newFormData.additionalFunction.includes(feature.name)
-            ? newFormData.additionalFunction.filter((f) => f !== feature.name) // Deselect
-            : [...newFormData.additionalFunction, feature.name]; // Select
-
-        handleChangeForm({
-            target: {
-                name: "additionalFunction",
-                value: updatedFunctions,
-            },
-        });
-    };
 
     return (
         <Container className="car-infor-container">
             <Form>
-                {/* <h6 className="car-register-title">Title</h6>
-                <span className="note">
-                    Lưu ý: Biển số sẽ không thể thay đổi sau khi đăng ký.
-                </span>
-
-                <Form.Group className="mb-5 col-md-6">
-                    <Form.Control
-                        type="text"
-                        name="licensePlate"
-                        value={newFormData.licensePlate}
-                        onChange={handleChangeForm}
-                    />
-                </Form.Group> */}
-
                 <h6 className="car-register-title">Course Information</h6>
-
                 <Row>
-
-                    {/* Hãng xe */}
                     <Form.Group className="mb-3 col-md-6">
-                        <Form.Label className="form-lable-basic-infor">Title</Form.Label>
-                        <Form.Control
-                            type="text"
-                            name="title"
-                            value={newFormData.title}
-                            onChange={handleChangeForm}
-                        />
+                        <Form.Label>Title</Form.Label>
+                        <Form.Control type="text" name="title" value={newFormData.title} onChange={handleChangeForm} />
                     </Form.Group>
-
-                    {/* <Form.Group className="mb-3 col-md-6">
-                        <Form.Label className="form-lable-basic-infor">Mẫu xe</Form.Label>
-                        <Form.Select
-                            disabled={newFormData.brand == '' ? true : false}
-                            onChange={handleChangeForm}
-                            name="model"
-                            value={newFormData.model}
-                        >
-                            <option>{newFormData.brand == '' ? 'Chọn hãng xe trước' : 'Chưa chọn'}</option>
-                            <option value="1">One</option>
-                            <option value="2">Two</option>
-                            <option value="3">Three</option>
-                        </Form.Select>
-                    </Form.Group>
-
-                    <Form.Group className="mb-3 col-md-6">
-                        <Form.Label className="form-lable-basic-infor">Số ghế</Form.Label>
-
-                        <Form.Select onChange={handleChangeForm} name="seats" value={newFormData.seats}>
-                            {
-                                numberOfSeats.map((seat, index) => (
-                                    <option key={`seat-${index}`} value={+seat}>{seat}</option>
-                                ))
-                            }
-                        </Form.Select>
-                    </Form.Group>
-
-                    <Form.Group className="mb-3 col-md-6">
-                        <Form.Label className="form-lable-basic-infor">Năm sản xuất</Form.Label>
-
-                        <Form.Select onChange={handleChangeForm} name="productionYear" value={newFormData.productionYear}>
-                            {
-                                year.map((year, index) => (
-                                    <option key={`year-${index}`} value={+year}>{year}</option>
-                                ))
-                            }
-                        </Form.Select>
-                    </Form.Group>
-
-                    <Form.Group className="mb-3 col-md-6">
-                        <Form.Label className="form-lable-basic-infor">Truyền động</Form.Label>
-
-                        <Form.Select onChange={handleChangeForm} name="transmissionType" value={newFormData.transmissionType}>
-                            {
-                                transmission.map((trans, index) => (
-                                    <option key={`trans-${index}`} value={trans}>{trans}</option>
-                                ))
-                            }
-                        </Form.Select>
-                    </Form.Group>
-
-                    <Form.Group className="mb-3 col-md-6">
-                        <Form.Label className="form-lable-basic-infor">Loại nhiên liệu</Form.Label>
-
-                        <Form.Select onChange={handleChangeForm} name="fuelType" value={newFormData.fuelType}>
-                            {
-                                fuel.map((fuel, index) => (
-                                    <option key={`fuel-${index}`} value={fuel}>{fuel}</option>
-                                ))
-                            }
-                        </Form.Select>
-                    </Form.Group> */}
                 </Row>
-
-                {/* Mức tiêu thụ nhiên liệu */}
-                {/* <h6 className="car-register-title" style={{ marginTop: "20px" }}>Mức tiêu thụ nhiên liệu</h6>
-                <span className="script">
-                    Số lít nhiên liệu cho quãng đường 100km.
-                </span>
-                <Form.Group className="mb-5 col-md-6">
-                    <Form.Control
-                        type="number"
-                        name="fuelConsumption"
-                        value={newFormData.fuelConsumption}
-                        onChange={handleChangeForm}
-                    />
-                </Form.Group> */}
-
-                {/* Mô tả */}
-                <h6 className="car-register-title" style={{ marginTop: "20px", marginBottom: '20px' }}>Description</h6>
-                <Form.Group className="mb-5 ">
-                    <Form.Control
-                        as="textarea" rows={3}
-                        name="description"
-                        value={newFormData.description}
-                        onChange={handleChangeForm}
-                        type="text"
-                    />
+                <h6 className="mt-3 mb-3">Description</h6>
+                <Form.Group className="mb-5">
+                    <Form.Control as="textarea" rows={3} name="description" value={newFormData.description} onChange={handleChangeForm} />
                 </Form.Group>
-
-                {/* Tính năng */}
-                {/* <h6 className="car-register-title" style={{ marginTop: '20px', marginBottom: '20px' }}>Tính năng</h6>
-                <Row>
-                    {addFunction.map((f, index) => (
-                        <Col md={6} lg={4} key={index}>
-                            <Card
-                                onClick={() => toggleSelect(f)}
-                                className={newFormData.additionalFunction.includes(f.name) ? "card-fnc-selected" : "card-fnc-nonselected"}
-                            >
-                                <Card.Text className="card-fnc-text-container">
-                                    <Image src={`/images/${f.image}`} style={{ height: '50%' }} />
-                                    <br />
-                                    <span style={{ fontSize: '15px', color: 'black' }}>{f.name}</span>
-                                </Card.Text>
-                            </Card>
-                        </Col>
-                    ))}
-                </Row> */}
             </Form>
         </Container>
     );
 }
 
-function CarHired({ newFormData, handleChangeForm }) {
-
-    // const handlePrice = (e) => {
-    //     handleChangeForm({
-    //         target: {
-    //             name: e.target.name,
-    //             value: +e.target.value * 1000,
-    //         },
-    //     });
-    // };
-
+function LectureInformation({ newFormData, handleChangeForm, handleFileChange, addLecture, removeLecture }) {
     console.log(newFormData);
 
 
-    // const priceInK = newFormData.price / 1000 || 0;
-
     return (
         <Container className="car-infor-container">
-            <h6 className="car-register-title">Đơn giá thuê mặc định</h6>
-            <span className="script" style={{ marginBottom: '15px' }}>
-                Đơn giá áp dụng cho tất cả các ngày
-            </span>
+            <h6 className="car-register-title">Lecture Information</h6>
+            <span className="note">A class must have at least one lecture</span>
 
-            <span className="script" style={{ marginBottom: '20px' }}>
-                Giá đề xuất: 470K
-            </span>
+            <Accordion defaultActiveKey="0" className="mt-3">
+                {newFormData.lectures.map((lecture, index) => (
+                    <Accordion.Item eventKey={index.toString()} key={index}>
+                        <Accordion.Header>
+                            Lecture #{index + 1} {lecture.title && `- ${lecture.title}`}
+                        </Accordion.Header>
+                        <Accordion.Body>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Title</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    name="title"
+                                    value={lecture.title}
+                                    onChange={(e) => handleChangeForm(e, index)}
+                                />
+                            </Form.Group>
 
-            <Col className="car-price-container">
-                <Form.Group className="col-md-6">
-                    <Form.Control
-                        type="number"
-                        name="price"
-                        value={newFormData.price}
-                        onChange={handleChangeForm}
-                    />
-                </Form.Group>
-                <span style={{ fontSize: '15px' }}>&nbsp;K</span>
-            </Col>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Content</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    name="content"
+                                    value={lecture.content}
+                                    onChange={(e) => handleChangeForm(e, index)}
+                                />
+                            </Form.Group>
 
-            <h6 className="car-register-title" style={{ marginBottom: '20px' }}>Địa chỉ xe</h6>
+                            <Form.Group className="mb-3">
+                                <Form.Label>File</Form.Label>
+                                <Form.Control
+                                    type="file"
+                                    name="file"
+                                    onChange={(e) => handleFileChange(e, index)}
+                                />
+                                {lecture.file && (
+                                    <p className="mt-2 text-success">
+                                        <i className="bi bi-check-circle me-2"></i>
+                                        File selected: {lecture.file.name}
+                                    </p>
+                                )}
+                            </Form.Group>
 
-            <Form.Group className="mb-5">
-                <Form.Control
-                    type="text"
-                    name="address"
-                    value={newFormData.address}
-                    onChange={handleChangeForm}
-                    placeholder="Địa chỉ mặc định để giao nhận xe."
-                />
-            </Form.Group>
+                            <Button
+                                variant="danger"
+                                size="sm"
+                                onClick={() => removeLecture(index)}
+                                className="mt-2"
+                                disabled={newFormData.lectures.length == 1 ? true : false}
+                            >
+                                <i className="bi bi-trash me-1"></i> Remove Lecture
+                            </Button>
+                        </Accordion.Body>
+                    </Accordion.Item>
+                ))}
+            </Accordion>
 
-            <h6 className="car-register-title" >Quãng đường đã đi</h6>
-            <span className="script">
-                Tổng số quãng đường xe đã di chuyển được (km)
-            </span>
-
-            <Form.Group className="mb-5 col-md-6">
-                <Form.Control
-                    type="number"
-                    name="mileage"
-                    value={newFormData.mileage}
-                    onChange={handleChangeForm}
-                />
-            </Form.Group>
-
-            <h6 className="car-register-title" >Giá đặt cọc xe</h6>
-
-            <Form.Group className="mb-5 col-md-6 mt-4">
-                <Form.Control
-                    type="number"
-                    name="deposit"
-                    value={newFormData.deposit}
-                    onChange={handleChangeForm}
-                />
-            </Form.Group>
+            <Button
+                variant="success"
+                className="mt-3 mb-3"
+                onClick={addLecture}
+            >
+                <i className="bi bi-plus-circle me-1"></i> Add Lecture
+            </Button>
         </Container>
     );
 }
 
-function CarImages({ newFormData, handleChangeForm }) {
-
+function CourseImage({ newFormData, handleImageChange }) {
     const [imagePreview, setImagePreview] = useState(null);
 
-    const handleFileChange = (event) => {
-        const file = event.target.files[0]; // Get the selected file
-        if (!file) return;
-
-        // Generate preview and set image preview state
-        const previewUrl = URL.createObjectURL(file);
-        setImagePreview(previewUrl);
-
-        // Update the form data in the parent component
-        handleChangeForm({
-            target: {
-                name: "images", // Input name to match form field
-                value: file, // Pass the file object
-            },
-        });
-    };
+    useEffect(() => {
+        if (newFormData.image instanceof File) {
+            setImagePreview(URL.createObjectURL(newFormData.image));
+            return () => {
+                if (imagePreview) URL.revokeObjectURL(imagePreview);
+            };
+        }
+    }, [newFormData.image]);
 
     console.log(newFormData);
 
 
     return (
         <Container className="car-infor-container">
-            <h6 className="car-register-title">Hình ảnh</h6>
-            <span className="script">
-                Đăng nhiều hình ở các góc độ khác nhau để tăng thông tin cho xe của bạn.
-            </span>
-
-            {/* <Form.Control type="file" multiple className="car-image-input" /> */}
-            {/* <input type="file" className="car-image-input"/> */}
-            <Container style={{ display: 'flex', justifyContent: 'space-evenly' }}>
-                <Form.Group controlId="formFile" className="mb-3 col-md-7">
+            <h6 className="car-register-title mb-5">Course Image</h6>
+            <Container>
+                <Form.Group controlId="formFile" className="mb-3 col-md-8">
                     <div className="upload-container">
                         <label htmlFor="file-upload" className="upload-label">
                             {imagePreview ? (
@@ -471,7 +570,7 @@ function CarImages({ newFormData, handleChangeForm }) {
                             ) : (
                                 <>
                                     <i className="bi bi-cloud-arrow-up"></i>
-                                    <p>Chọn hình ảnh</p>
+                                    <p>Choose Image</p>
                                 </>
                             )}
                         </label>
@@ -479,33 +578,18 @@ function CarImages({ newFormData, handleChangeForm }) {
                             id="file-upload"
                             type="file"
                             hidden
-                            onChange={handleFileChange} // Handle file upload
+                            name="image"
+                            accept="image/*"
+                            onChange={handleImageChange}
                         />
                     </div>
                 </Form.Group>
-
-                <Form.Group controlId="formFile" className="mb-3 col-md-4">
-                    <div className="upload-container">
-                        <label htmlFor="file-upload" className="upload-label">
-                            {imagePreview ? (
-                                <div className="preview-box">
-                                    <img src={imagePreview} alt="Preview" className="preview-img" />
-                                </div>
-                            ) : (
-                                <>
-                                    <i className="bi bi-cloud-arrow-up"></i>
-                                    <p>Chọn hình ảnh</p>
-                                </>
-                            )}
-                        </label>
-                        <input
-                            id="file-upload"
-                            type="file"
-                            hidden
-                            onChange={handleFileChange} // Handle file upload
-                        />
-                    </div>
-                </Form.Group>
+                {newFormData.image && (
+                    <p className="text-success">
+                        <i className="bi bi-check-circle me-2"></i>
+                        Image selected: {newFormData.image.name}
+                    </p>
+                )}
             </Container>
         </Container>
     );

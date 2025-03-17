@@ -46,7 +46,7 @@ const CourseDetail = () => {
         setCurrentDate(today.toLocaleDateString('en-US', options)); // Format: "Mar 13"
 
         const fetchUserClass = async () => {
-            if (role == 'teacher')
+            if (role == 'teacher' || role == null)
                 return
             try {
                 const response = await axios.get(`${API_BASE_URL}/enrollment/my-classes`,
@@ -104,7 +104,7 @@ const CourseDetail = () => {
             }
         }
     }, [studentCourses]);
-    // console.log(accessToken);
+    console.log(accessToken);
 
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
@@ -137,6 +137,9 @@ const CourseDetail = () => {
 
 
     const handleEnroll = async () => {
+        if(!accessToken){
+            setShow(true)
+        }
         try {
             const response = await axios.post(`${API_BASE_URL}/enrollment/${cid}`,
                 {},
@@ -148,6 +151,7 @@ const CourseDetail = () => {
                     withCredentials: true // Nếu backend yêu cầu cookie
                 }
             );
+            
             console.log(response.data);
             sweetalert("Success", "Enrollment successful!", "success")
             setIsEnroll(true)
@@ -296,7 +300,7 @@ const CourseDetail = () => {
                                     {course.description}
                                 </p>
                                 <div style={{ alignItems: 'center', justifyContent: 'center' }}>
-                                    {role == 'student' && (<button className='btn btn-primary mb-3' disabled={isEnroll ? true : false} onClick={accessToken ? handleEnroll : handleShow}>
+                                    {(role == 'student' || role == null) && (<button className='btn btn-primary mb-3' disabled={isEnroll ? true : false} onClick={accessToken ? handleEnroll : handleShow}>
                                         <p style={{ marginBottom: "-7px" }}>{isEnroll ? 'Enrolled' : 'Enroll'}</p>
                                         {/* <br /> */}
                                         <span style={{ fontSize: '12px' }}> {isEnroll ? `At ${enrolledDate}` : `Starts ${currentDate}`}</span>
