@@ -22,9 +22,11 @@ const CourseDetail = () => {
     const [studentCourses, setStudentCourses] = useState([])
     const [isEnroll, setIsEnroll] = useState(false)
     const [enrolledDate, setEnrolledDate] = useState('')
+    const [teacherId, setTeacherId] = useState('')
+    const [isCreatedBy, setIsCreatedBy] = useState(false)
 
     const navigate = useNavigate()
-    
+
     useEffect(() => {
         const fetchClass = async () => {
             try {
@@ -32,6 +34,10 @@ const CourseDetail = () => {
                 setLectures(response.data.class.lectures);
                 setCourse(response.data.class);
                 setTeacherName(response.data.class.createdBy.name);
+                setTeacherId(response.data.class.createdBy._id)
+                // console.log(teacherId);
+
+
             } catch (error) {
                 console.log("Cannot get class from server", error);
             }
@@ -66,6 +72,12 @@ const CourseDetail = () => {
     }, [cid, accessToken, role]);
 
     useEffect(() => {
+        const storedTid = localStorage.getItem('tid');
+       
+        if (storedTid && storedTid === teacherId) {
+            setIsCreatedBy(true);
+        }
+
         if (role == "student") {
             if (studentCourses.length > 0) {
                 studentCourses.forEach(course => {
@@ -77,7 +89,10 @@ const CourseDetail = () => {
                 });
             }
         }
-    }, [studentCourses, cid, role]);
+    }, [studentCourses, cid, role, teacherId]);
+
+    
+
 
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
@@ -91,11 +106,13 @@ const CourseDetail = () => {
                 const newToken = response.data.accessToken;
                 localStorage.setItem("accessToken", newToken);
                 localStorage.setItem("email", response.data.userData.email);
-                
+
                 // Decode the token we just received
                 const decodedToken = jwtDecode(newToken);
                 localStorage.setItem('role', decodedToken.role);
-                
+                if (localStorage.getItem('role') == 'teacher')
+                    localStorage.setItem('tid', decodedToken._id);
+
                 // Update local state
                 setAccessToken(newToken);
                 setRole(decodedToken.role);
@@ -114,7 +131,7 @@ const CourseDetail = () => {
     };
 
     const handleEnroll = async () => {
-        if(!accessToken){
+        if (!accessToken) {
             setShow(true)
             return;
         }
@@ -128,10 +145,10 @@ const CourseDetail = () => {
                     withCredentials: true
                 }
             );
-            
+
             sweetalert("Success", "Enrollment successful!", "success")
             setIsEnroll(true);
-            
+
             // Update enrolled date
             const today = new Date();
             const options = { month: 'short', day: 'numeric' };
@@ -309,21 +326,23 @@ const CourseDetail = () => {
                                     )}
                                 </Accordion>
 
-                                <div style={{ marginTop: '30px' }}>
-                                    <Button
-                                        variant='success'
-                                        style={{ marginRight: '20px' }}
-                                        as={Link}
-                                        to={`/update-course/${cid}`}
-                                    >Update Course
-                                    </Button>
-                                    <Button
-                                        variant='warning'
-                                        style={{ color: 'white' }}
-                                        as={Link}
-                                        to={`/view-student/${cid}`}
-                                    >View Student</Button>
-                                </div>
+                                {role == 'teacher' && isCreatedBy &&
+                                    (<div style={{ marginTop: '30px' }}>
+                                        <Button
+                                            variant='success'
+                                            style={{ marginRight: '20px' }}
+                                            as={Link}
+                                            to={`/update-course/${cid}`}
+                                        >Update Course
+                                        </Button>
+                                        <Button
+                                            variant='warning'
+                                            style={{ color: 'white' }}
+                                            as={Link}
+                                            to={`/view-student/${cid}`}
+                                        >View Student</Button>
+                                    </div>)}
+
                             </div>
                         </div>
 

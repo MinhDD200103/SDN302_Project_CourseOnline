@@ -12,8 +12,8 @@ export default function Header() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const accessToken = localStorage.getItem("accessToken");
-  const userEmail = localStorage.getItem("email");
+  // const accessToken = localStorage.getItem("accessToken");
+  // const userEmail = localStorage.getItem("email");
   // const userAvatar = localStorage.getItem("avatar") || "/default-avatar.png"; // Thêm avatar
 
   const navigate = useNavigate();
@@ -33,7 +33,12 @@ export default function Header() {
         // localStorage.setItem("avatar", response.data.userData.avatar);
         const decodedToken = jwtDecode(localStorage.getItem("accessToken"));
         localStorage.setItem('role', decodedToken.role)
+        // localStorage.setItem('decode', decodedToken)
+        if (localStorage.getItem('role') == 'teacher')
+          localStorage.setItem('tid', decodedToken._id)
 
+        console.log(localStorage.getItem('tid'));
+        
 
         sweetalert("Success", "Login successfully!", "success");
         handleClose();
@@ -45,7 +50,13 @@ export default function Header() {
     }
   };
 
-  console.log(localStorage.getItem('role'));
+  console.log(localStorage.getItem('tid'));
+  // console.log(localStorage.getItem('role'));
+  // console.log(localStorage.getItem('decode'));
+
+  useEffect(() => {
+
+  }, [])
 
 
   const handleLogout = async () => {
@@ -55,6 +66,7 @@ export default function Header() {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("email");
       localStorage.removeItem("role")
+      localStorage.removeItem("tid")
 
       sweetalert("Success", "Logged out successfully!", "success").then(() => {
         navigate("/");
@@ -93,24 +105,24 @@ export default function Header() {
                   <Link to="/course" className={`nav-item nav-link ${path === "/course" ? "active" : ""}`}>
                     Courses
                   </Link>
-                  {accessToken && (
+                  {localStorage.getItem("accessToken") && (
                     <Link to="/my-course" className={`nav-item nav-link ${path === "/my-course" ? "active" : ""}`}>
                       My Courses
                     </Link>
                   )}
 
-                  {accessToken && localStorage.getItem('role') == 'teacher' && (
+                  {localStorage.getItem("accessToken") && localStorage.getItem('role') == 'teacher' && (
                     <Link to="/create" className={`nav-item nav-link ${path === "/create" ? "active" : ""}`}>
                       Create Course
                     </Link>
                   )}
                 </div>
 
-                {accessToken ? (
+                {localStorage.getItem("accessToken") ? (
                   <Dropdown className="user-dropdown">
                     <Dropdown.Toggle variant="light" className="user-dropdown-toggle">
                       <img src='/user.jpg' alt="Avatar" className="user-avatar" />
-                      <span className="user-email">{userEmail}</span>
+                      <span className="user-email">{localStorage.getItem('email')}</span>
                     </Dropdown.Toggle>
 
                     <Dropdown.Menu>

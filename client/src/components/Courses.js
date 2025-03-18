@@ -62,8 +62,8 @@ export default function Courses() {
                             <p className="m-0 text-uppercase">
                                 <Link className="text-white" to="/course">Courses</Link>
                             </p>
-                            <i className="bi bi-chevron-double-right" style={{ margin: "0 10px" }}></i>
-                            <p className="m-0 text-uppercase">Detail</p>
+                            {/* <i className="bi bi-chevron-double-right" style={{ margin: "0 10px" }}></i>
+                            <p className="m-0 text-uppercase">Detail</p> */}
                         </div>
                         {/* Search Box */}
                         <div className="d-flex align-items-center position-relative mt-4">

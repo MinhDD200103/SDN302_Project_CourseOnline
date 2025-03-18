@@ -82,10 +82,75 @@ const MyCourse = () => {
                         <h1>My Courses</h1>
                     </div>
 
+                    {/* Đoạn này sẽ xử lí rằng nếu mà giáo viên chưa tạo lớp
+                    hoặc sinh viên chưa tham gia lớp học nào thì sẽ hiện thông báo */}
+                    
+                    {/* {role === 'teacher' && teacherCourses.length === 0 ? (
+                        <div className="text-center">
+                            <h4 className="text-muted">You haven't created any courses yet.</h4>
+                        </div>
+                    ) : role === 'student' && studentCourses.length === 0 ? (
+                        <div className="text-center">
+                            <h4 className="text-muted">You are not enrolled in any courses yet.</h4>
+                        </div>
+                    ) : (
+                        <div className="row">
+                            {role === 'teacher'
+                                ? teacherCourses.map((course) => (
+                                    <div key={course._id} className="col-lg-4 col-md-6 mb-4">
+                                        <div className="rounded overflow-hidden mb-2">
+                                            <img className="img-fluid" src={course.image} alt="" />
+                                            <div className="bg-secondary p-4">
+                                                <Link className="h5" to={`/course/${course._id}`}>
+                                                    {course.title}
+                                                </Link>
+                                                <div className="border-top mt-4 pt-4">
+                                                    <div className="d-flex justify-content-between">
+                                                        <h6 className="m-0">
+                                                            <i className="bi bi-person-fill text-primary me-2" />
+                                                            {course.createdBy.name}
+                                                        </h6>
+                                                        <h6 className="m-0">
+                                                            <i className="bi bi-book text-primary me-2" />
+                                                            {course.lectures.length} lectures
+                                                        </h6>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                                : studentCourses.map((course) => (
+                                    <div key={course.classId._id} className="col-lg-4 col-md-6 mb-4">
+                                        <div className="rounded overflow-hidden mb-2">
+                                            <img className="img-fluid" src={course.classId.image} alt="" />
+                                            <div className="bg-secondary p-4">
+                                                <Link className="h5" to={`/course/${course.classId._id}`}>
+                                                    {course.classId.title}
+                                                </Link>
+                                                <div className="border-top mt-4 pt-4">
+                                                    <div className="d-flex justify-content-between">
+                                                        <h6 className="m-0">
+                                                            <i className="bi bi-person-fill text-primary me-2" />
+                                                            {course.classId.createdBy.name}
+                                                        </h6>
+                                                        <h6 className="m-0">
+                                                            <i className="bi bi-book text-primary me-2" />
+                                                            {course.classId.lectures.length} lectures
+                                                        </h6>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                        </div>
+                    )} */}
+
                     {/* Course List */}
                     <div className="row">
-                        {role == 'teacher'
-                            ? teacherCourses?.map((course) => (
+                        {role === 'teacher'
+                            ? teacherCourses.map((course) => (
                                 <div key={course._id} className="col-lg-4 col-md-6 mb-4">
                                     <div className="rounded overflow-hidden mb-2">
                                         <img className="img-fluid" src={course.image} alt="" />
@@ -109,7 +174,7 @@ const MyCourse = () => {
                                     </div>
                                 </div>
                             ))
-                            : studentCourses?.map((course) => (
+                            : studentCourses.map((course) => (
                                 <div key={course.classId._id} className="col-lg-4 col-md-6 mb-4">
                                     <div className="rounded overflow-hidden mb-2">
                                         <img className="img-fluid" src={course.classId.image} alt="" />
@@ -134,7 +199,6 @@ const MyCourse = () => {
                                 </div>
                             ))}
                     </div>
-
                 </div>
             </div>
         </>

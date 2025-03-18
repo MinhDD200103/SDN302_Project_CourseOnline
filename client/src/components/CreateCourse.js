@@ -319,16 +319,16 @@ export default function CreateCourse() {
         const file = e.target.files[0];
         if (!file) return;
 
-        const allowedTypes = [
-            "application/pdf",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-            "application/vnd.openxmlformats-officedocument.presentationml.presentation" // .pptx
-        ];
+        // const allowedTypes = [
+        //     "application/pdf",
+        //     "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+        //     "application/vnd.openxmlformats-officedocument.presentationml.presentation" // .pptx
+        // ];
 
-        if (!allowedTypes.includes(file.type)) {
-            sweetalert("Error", "Only .docx, .pdf, and .pptx files are allowed.", 'error');
-            return;
-        }
+        // if (!allowedTypes.includes(file.type)) {
+        //     sweetalert("Error", "Only .docx, .pdf, and .pptx files are allowed.", 'error');
+        //     return;
+        // }
 
         setNewFormData((prev) => {
             const updatedLectures = [...prev.lectures];
