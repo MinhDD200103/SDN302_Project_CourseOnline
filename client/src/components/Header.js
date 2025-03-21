@@ -11,17 +11,61 @@ export default function Header() {
   const [show, setShow] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  // const accessToken = localStorage.getItem("accessToken");
-  // const userEmail = localStorage.getItem("email");
-  // const userAvatar = localStorage.getItem("avatar") || "/default-avatar.png"; // Thêm avatar
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const [userRole, setUserRole] = useState("");
 
   const navigate = useNavigate();
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
+  // Kiểm tra token khi component được mount
+  useEffect(() => {
+    checkTokenValidity();
+  }, []);
 
+  // Hàm kiểm tra tính hợp lệ của token
+  const checkTokenValidity = () => {
+    const token = localStorage.getItem("accessToken");
+    
+    if (token) {
+      try {
+        const decodedToken = jwtDecode(token);
+        const currentTime = Date.now() / 1000;
+        
+        // Nếu token đã hết hạn
+        if (decodedToken.exp < currentTime) {
+          // Axios interceptor sẽ tự động xử lý refresh token
+          // Chúng ta chỉ cần gọi một API request bất kỳ để kích hoạt
+          API.get("/user/current")
+            .then(response => {
+              // Nếu refresh token thành công, interceptor đã cập nhật token mới
+              // Cập nhật state với thông tin người dùng
+              setIsLoggedIn(true);
+              setUserEmail(localStorage.getItem("email"));
+              setUserRole(localStorage.getItem("role"));
+            })
+            .catch(error => {
+              // Nếu có lỗi và không thể refresh, interceptor sẽ đăng xuất người dùng
+              setIsLoggedIn(false);
+              setUserEmail("");
+              setUserRole("");
+            });
+        } else {
+          // Token vẫn còn hiệu lực
+          setIsLoggedIn(true);
+          setUserEmail(localStorage.getItem("email"));
+          setUserRole(localStorage.getItem("role"));
+        }
+      } catch (error) {
+        // Nếu có lỗi khi giải mã token, xóa token từ localStorage
+        handleLogout();
+      }
+    } else {
+      setIsLoggedIn(false);
+    }
+  };
 
   const handleLogin = async () => {
     try {
@@ -30,15 +74,17 @@ export default function Header() {
       if (response.data.success) {
         localStorage.setItem("accessToken", response.data.accessToken);
         localStorage.setItem("email", response.data.userData.email);
-        // localStorage.setItem("avatar", response.data.userData.avatar);
-        const decodedToken = jwtDecode(localStorage.getItem("accessToken"));
-        localStorage.setItem('role', decodedToken.role)
-        // localStorage.setItem('decode', decodedToken)
-        if (localStorage.getItem('role') == 'teacher')
-          localStorage.setItem('tid', decodedToken._id)
-
-        console.log(localStorage.getItem('tid'));
         
+        const decodedToken = jwtDecode(response.data.accessToken);
+        localStorage.setItem('role', decodedToken.role);
+        
+        if (decodedToken.role === 'teacher') {
+          localStorage.setItem('tid', decodedToken._id);
+        }
+
+        setIsLoggedIn(true);
+        setUserEmail(response.data.userData.email);
+        setUserRole(decodedToken.role);
 
         sweetalert("Success", "Login successfully!", "success");
         handleClose();
@@ -50,23 +96,18 @@ export default function Header() {
     }
   };
 
-  console.log(localStorage.getItem('tid'));
-  // console.log(localStorage.getItem('role'));
-  // console.log(localStorage.getItem('decode'));
-
-  useEffect(() => {
-
-  }, [])
-
-
   const handleLogout = async () => {
     try {
       await API.get("/user/logout");
 
       localStorage.removeItem("accessToken");
       localStorage.removeItem("email");
-      localStorage.removeItem("role")
-      localStorage.removeItem("tid")
+      localStorage.removeItem("role");
+      localStorage.removeItem("tid");
+      
+      setIsLoggedIn(false);
+      setUserEmail("");
+      setUserRole("");
 
       sweetalert("Success", "Logged out successfully!", "success").then(() => {
         navigate("/");
@@ -75,6 +116,7 @@ export default function Header() {
       sweetalert("Error", error.response?.data?.message || "Logout failed!", "error");
     }
   };
+
 
   return (
     <>
@@ -105,24 +147,24 @@ export default function Header() {
                   <Link to="/course" className={`nav-item nav-link ${path === "/course" ? "active" : ""}`}>
                     Courses
                   </Link>
-                  {localStorage.getItem("accessToken") && (
+                  {isLoggedIn && (
                     <Link to="/my-course" className={`nav-item nav-link ${path === "/my-course" ? "active" : ""}`}>
                       My Courses
                     </Link>
                   )}
 
-                  {localStorage.getItem("accessToken") && localStorage.getItem('role') == 'teacher' && (
+                  {isLoggedIn && userRole === 'teacher' && (
                     <Link to="/create" className={`nav-item nav-link ${path === "/create" ? "active" : ""}`}>
                       Create Course
                     </Link>
                   )}
                 </div>
 
-                {localStorage.getItem("accessToken") ? (
+                {isLoggedIn ? (
                   <Dropdown className="user-dropdown">
                     <Dropdown.Toggle variant="light" className="user-dropdown-toggle">
                       <img src='/user.jpg' alt="Avatar" className="user-avatar" />
-                      <span className="user-email">{localStorage.getItem('email')}</span>
+                      <span className="user-email">{userEmail}</span>
                     </Dropdown.Toggle>
 
                     <Dropdown.Menu>

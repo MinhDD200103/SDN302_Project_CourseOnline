@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Form, InputGroup, Button, Table, Card, Pagination, Badge } from 'react-bootstrap';
 
 const ViewStudent = () => {
@@ -40,27 +40,32 @@ const ViewStudent = () => {
         return `${firstName.charAt(0)}${lastName.charAt(0)}`;
     };
 
+
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [])
+
     return (
         <Container fluid className="p-4">
             <Row className="mb-4 align-items-center">
                 <Col>
                     <div className="d-flex align-items-center">
                         <h4 className="mb-0">Students</h4>
-                        <Badge className="ms-3 bg-light text-dark" pill>82</Badge>
+                        <Badge className="ms-3" pill >82</Badge>
                     </div>
                 </Col>
                 <Col className="d-flex justify-content-end">
-                    <InputGroup className="me-3" style={{ maxWidth: '250px' }}>
+                    <InputGroup className="me-3" style={{ maxWidth: '250px', paddingBottom: '6px' }}>
                         <InputGroup.Text className="bg-white">
                             <i className="bi bi-search text-muted"></i>
                         </InputGroup.Text>
                         <Form.Control 
-                            placeholder="Search" 
+                            placeholder="Search student's email" 
                             aria-label="Search"
                             className="border-start-0"
                         />
                     </InputGroup>
-                    <Button variant="outline-secondary" className="me-2">
+                    {/* <Button variant="outline-secondary" className="me-2">
                         <i className="bi bi-list"></i>
                     </Button>
                     <Button variant="outline-secondary">
@@ -70,7 +75,7 @@ const ViewStudent = () => {
                         <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
                             JD
                         </div>
-                    </div>
+                    </div> */}
                 </Col>
             </Row>
 
@@ -86,14 +91,14 @@ const ViewStudent = () => {
                     </Form.Group>
                 </Col>
                 <Col className="d-flex justify-content-end align-items-end">
-                    <Button variant="outline-secondary" className="me-2">
+                    <Button variant="outline-success" className="me-2">
                         <i className="bi bi-funnel me-2"></i>
                         Filter
                     </Button>
-                    <Button variant="primary">
+                    {/* <Button variant="primary">
                         <i className="bi bi-person-plus me-2"></i>
                         Add a student
-                    </Button>
+                    </Button> */}
                 </Col>
             </Row>
 

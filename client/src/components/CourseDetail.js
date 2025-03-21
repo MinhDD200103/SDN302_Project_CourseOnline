@@ -69,6 +69,7 @@ const CourseDetail = () => {
         }
 
         fetchUserClass()
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [cid, accessToken, role]);
 
     useEffect(() => {

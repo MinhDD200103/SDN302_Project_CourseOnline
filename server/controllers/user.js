@@ -173,7 +173,7 @@ const updateUser = asyncHandler(async (req, res) => {
     const user = await User.findByIdAndUpdate(_id, { name: name }, { new: true }).select('-role -password -refreshToken')
     return res.status(200).json({
         success: user ? true : false,
-        message : user ? user : "User not found"
+        message: user ? user : "User not found"
     })
 })
 
