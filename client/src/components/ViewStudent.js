@@ -1,44 +1,72 @@
+import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Form, InputGroup, Button, Table, Card, Pagination, Badge } from 'react-bootstrap';
+import API_BASE_URL from '../config/config';
+import { useParams } from 'react-router-dom';
 
 const ViewStudent = () => {
-    const [students, setStudents] = useState([
-        { id: '12289', firstName: 'Daisy', lastName: 'Scott', email: 'daisy22@gmail.com', phone: '+442146886341', yearGroup: 'Grade 10', photo: 'green' },
-        { id: '12288', firstName: 'Isabel', lastName: 'Harris', email: 'isabel887@gmail.com', phone: '+442251886322', yearGroup: 'Grade 12', photo: 'red' },
-        { id: '12287', firstName: 'Dan', lastName: 'Thomas', email: 'dan87675@gmail.com', phone: '+442445825355', yearGroup: 'Grade 12', photo: 'teal' },
-        { id: '12286', firstName: 'Debra', lastName: 'Nelson', email: 'debra1212@gmail.com', phone: '+442342292343', yearGroup: 'Grade 11', photo: 'purple' },
-        { id: '12285', firstName: 'Vera', lastName: 'Cooper', email: 'vera8888@gmail.com', phone: '+442118925444', yearGroup: 'Grade 12', photo: 'aqua' },
-        { id: '12284', firstName: 'Brian', lastName: 'Miller', email: 'brian5564@gmail.com', phone: '+442243236311', yearGroup: 'Grade 12', photo: 'navy' },
-        { id: '12283', firstName: 'Lauren', lastName: 'Martin', email: 'lauren7712@gmail.com', phone: '+442898235622', yearGroup: 'Grade 10', photo: 'blue' },
-        { id: '12282', firstName: 'Milton', lastName: 'Smith', email: 'milton2244@gmail.com', phone: '+442044975177', yearGroup: 'Grade 12', photo: 'brown' },
-        { id: '12281', firstName: 'Molly', lastName: 'White', email: 'molly4747@gmail.com', phone: '+442041996398', yearGroup: 'Grade 12', photo: 'gold' },
-    ]);
 
-    const [selectedSchool, setSelectedSchool] = useState('Big Ben');
     const [currentPage, setCurrentPage] = useState(1);
-    const totalPages = 10;
+    const [totalPages, setTotalPages] = useState(0);
+    const [limit, setLimit] = useState(3)
+    const { cid } = useParams()
+    const [email, setEmail] = useState('')
+    const [students, setStudents] = useState([])
+    const [sort, setSort] = useState(false)
+    const [courseTitle, setCourseTitle] = useState('')
 
-    // Get avatar color based on the profile color
-    const getAvatarStyle = (color) => {
-        const colorMap = {
-            green: 'bg-success',
-            red: 'bg-danger',
-            teal: 'bg-info',
-            purple: 'bg-purple',
-            aqua: 'bg-info',
-            navy: 'bg-primary',
-            blue: 'bg-primary',
-            brown: 'bg-secondary',
-            gold: 'bg-warning',
+
+
+    useEffect(() => {
+        const fetchStudent = async () => {
+            try {
+                let query = `${API_BASE_URL}/enrollment/${cid}?page=${currentPage}&limit=${limit}`;
+                if (email.trim() !== '') {
+                    query += `&email=${email}`;
+                }
+
+                query += `&sort=${sort ? '-email' : 'email'}`;
+
+                const response = await axios.get(query, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
+                    withCredentials: true
+                });
+
+                setCurrentPage(response.data.currentPage);
+                setTotalPages(response.data.totalPages);
+                setStudents(response.data.enrollments);
+
+
+            } catch (error) {
+                console.error("Error fetching students:", error);
+            }
         };
-        
-        return `${colorMap[color] || 'bg-secondary'} text-white rounded-circle d-flex align-items-center justify-content-center`;
-    };
 
-    // Get initials for avatar
-    const getInitials = (firstName, lastName) => {
-        return `${firstName.charAt(0)}${lastName.charAt(0)}`;
-    };
+        const fetchCourse = async () => {
+            try {
+
+                const response = await axios.get(`${API_BASE_URL}/class/${cid}`);
+                
+                setCourseTitle(response.data.class.title)
+
+
+            } catch (error) {
+                console.error("Error fetching students:", error);
+            }
+        };
+
+
+        fetchStudent();
+        fetchCourse();
+    }, [email, sort, currentPage, limit, cid]);
+
+    console.log(sort);
+
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+        // Scroll lên đầu trang khi chuyển trang
+        // window.scrollTo(0, 0);
+    }
 
 
     useEffect(() => {
@@ -51,7 +79,7 @@ const ViewStudent = () => {
                 <Col>
                     <div className="d-flex align-items-center">
                         <h4 className="mb-0">Students</h4>
-                        <Badge className="ms-3" pill >82</Badge>
+                        <Badge className="ms-3" pill >{students.length}</Badge>
                     </div>
                 </Col>
                 <Col className="d-flex justify-content-end">
@@ -59,10 +87,11 @@ const ViewStudent = () => {
                         <InputGroup.Text className="bg-white">
                             <i className="bi bi-search text-muted"></i>
                         </InputGroup.Text>
-                        <Form.Control 
-                            placeholder="Search student's email" 
+                        <Form.Control
+                            placeholder="Search student's email"
                             aria-label="Search"
                             className="border-start-0"
+                            onChange={(e) => setEmail(e.target.value)}
                         />
                     </InputGroup>
                     {/* <Button variant="outline-secondary" className="me-2">
@@ -82,18 +111,18 @@ const ViewStudent = () => {
             <Row className="mb-4">
                 <Col md={3}>
                     <Form.Group>
-                        <Form.Label>Select school</Form.Label>
-                        <Form.Select value={selectedSchool} onChange={e => setSelectedSchool(e.target.value)}>
+                        <Form.Label>Course</Form.Label>
+                        {/* <Form.Select  >
                             <option>Big Ben</option>
-                            <option>Oxford High</option>
-                            <option>Cambridge Primary</option>
-                        </Form.Select>
+                           
+                        </Form.Select> */}
+                        <p>{courseTitle}</p>
                     </Form.Group>
                 </Col>
                 <Col className="d-flex justify-content-end align-items-end">
-                    <Button variant="outline-success" className="me-2">
+                    <Button variant="outline-success" className="me-2" onClick={() => setSort(!sort)}>
                         <i className="bi bi-funnel me-2"></i>
-                        Filter
+                        Sort
                     </Button>
                     {/* <Button variant="primary">
                         <i className="bi bi-person-plus me-2"></i>
@@ -102,67 +131,57 @@ const ViewStudent = () => {
                 </Col>
             </Row>
 
-            <Card className="mb-4 border-0 shadow-sm">
-                <Table responsive hover className="mb-0">
-                    <thead>
-                        <tr>
-                            <th>
-                                <Form.Check 
-                                    type="checkbox" 
-                                    id="selectAll"
-                                />
-                            </th>
-                            <th>Photo</th>
-                            <th>ID</th>
-                            <th>First name</th>
-                            <th>Last name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Year group</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {students.map((student) => (
-                            <tr key={student.id}>
-                                <td>
-                                    <Form.Check 
-                                        type="checkbox" 
-                                        id={`student-${student.id}`}
-                                    />
-                                </td>
-                                <td>
-                                    <div className={getAvatarStyle(student.photo)} style={{ width: '35px', height: '35px' }}>
-                                        {getInitials(student.firstName, student.lastName)}
-                                    </div>
-                                </td>
-                                <td>{student.id}</td>
-                                <td>{student.firstName}</td>
-                                <td>{student.lastName}</td>
-                                <td>{student.email}</td>
-                                <td>{student.phone}</td>
-                                <td>{student.yearGroup}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </Table>
-            </Card>
 
-            <Row className="align-items-center">
-                <Col xs="auto">
-                    <Pagination>
-                        <Pagination.Item>
-                            <i className="bi bi-chevron-left"></i>
+            <Table striped bordered hover style={{ marginBottom: '50px' }}>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        {/* <th>Username</th> */}
+                    </tr>
+                </thead>
+                {students.map((s, index) => (
+                    <tbody key={`student-${index}`}>
+                        <tr>
+                            <td>{index + 1}</td>
+                            <td>{s.student.name}</td>
+                            <td>{s.student.email}</td>
+                        </tr>
+                    </tbody>
+                ))}
+
+
+
+            </Table>
+
+
+            <div className="d-flex justify-content-center mt-4">
+                <Pagination>
+
+                    <Pagination.Prev
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                    />
+
+                    {/* Hiển thị các số trang */}
+                    {[...Array(totalPages)].map((_, index) => (
+                        <Pagination.Item
+                            key={index + 1}
+                            active={index + 1 === currentPage}
+                            onClick={() => handlePageChange(index + 1)}
+                        >
+                            {index + 1}
                         </Pagination.Item>
-                        <Pagination.Item active>{currentPage}</Pagination.Item>
-                        <Pagination.Item>
-                            <i className="bi bi-chevron-right"></i>
-                        </Pagination.Item>
-                    </Pagination>
-                </Col>
-                <Col xs="auto">
-                    <span className="text-muted">of {totalPages}</span>
-                </Col>
-            </Row>
+                    ))}
+
+                    <Pagination.Next
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                    />
+
+                </Pagination>
+            </div>
         </Container>
     );
 };
