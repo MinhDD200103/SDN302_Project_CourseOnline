@@ -24,6 +24,7 @@ const CourseDetail = () => {
     const [enrolledDate, setEnrolledDate] = useState('')
     const [teacherId, setTeacherId] = useState('')
     const [isCreatedBy, setIsCreatedBy] = useState(false)
+    const [loginTrigger, setLoginTrigger] = useState('')
 
     const navigate = useNavigate()
 
@@ -35,9 +36,7 @@ const CourseDetail = () => {
                 setCourse(response.data.class);
                 setTeacherName(response.data.class.createdBy.name);
                 setTeacherId(response.data.class.createdBy._id)
-                // console.log(teacherId);
-
-
+        
             } catch (error) {
                 console.log("Cannot get class from server", error);
             }
@@ -73,6 +72,23 @@ const CourseDetail = () => {
     }, [cid, accessToken, role]);
 
     useEffect(() => {
+        const handleLoginEvent = () => {
+            // Increment loginTrigger to cause a re-render
+            setLoginTrigger(prev => prev + 1);
+            
+            // Update local states
+            setAccessToken(localStorage.getItem('accessToken'));
+            setRole(localStorage.getItem('role'));
+        };
+
+        window.addEventListener('courseLogin', handleLoginEvent);
+
+        return () => {
+            window.removeEventListener('courseLogin', handleLoginEvent);
+        };
+    }, []);
+
+    useEffect(() => {
         const storedTid = localStorage.getItem('tid');
        
         if (storedTid && storedTid === teacherId) {
@@ -90,9 +106,9 @@ const CourseDetail = () => {
                 });
             }
         }
-    }, [studentCourses, cid, role, teacherId]);
+    }, [studentCourses, cid, role, teacherId, loginTrigger]);
 
-    
+ 
 
 
     const handleClose = () => setShow(false);
@@ -101,28 +117,31 @@ const CourseDetail = () => {
     const handleLogin = async () => {
         try {
             const response = await API.post("/user/login", { email, password });
-
+    
             if (response.data.success) {
                 // Save token to localStorage
                 const newToken = response.data.accessToken;
                 localStorage.setItem("accessToken", newToken);
                 localStorage.setItem("email", response.data.userData.email);
-
+    
                 // Decode the token we just received
                 const decodedToken = jwtDecode(newToken);
                 localStorage.setItem('role', decodedToken.role);
                 if (localStorage.getItem('role') == 'teacher')
                     localStorage.setItem('tid', decodedToken._id);
-
+    
                 // Update local state
                 setAccessToken(newToken);
                 setRole(decodedToken.role);
-
+    
+                // Kích hoạt sự kiện storage để cập nhật header
+                window.dispatchEvent(new Event('storage'));
+    
                 sweetalert("Success", "Login successfully!", "success").then(() => {
                     handleClose();
                     navigate(`/course/${cid}`);
                 });
-
+    
                 setEmail("");
                 setPassword("");
             }
@@ -187,7 +206,7 @@ const CourseDetail = () => {
 
     const handleDownload = async (lecture) => {
         if (!accessToken) {
-            sweetalert("Error", "You need to login course to download", "error");
+            sweetalert("Error", "You need to login first", "error");
             return
         }
 
@@ -313,6 +332,7 @@ const CourseDetail = () => {
                                                             <button className='btn btn-primary'
                                                                 onClick={() => handleDownload(lecture)}
                                                                 title={getFileDisplayName(lecture)}
+                                                                disabled={isCreatedBy}
                                                             >
                                                                 <i className="bi bi-download" style={{ marginRight: '8px' }}></i>
                                                                 Download file

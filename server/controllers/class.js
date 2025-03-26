@@ -208,102 +208,117 @@ const getClassById = asyncHandler(async (req, res) => {
 });
 
 
-
-
-
 const updateClass = asyncHandler(async (req, res) => {
-    const { cid } = req.params;
+    try {
+        const { cid } = req.params;
+        const { title, description } = req.body;
+        let lectures = [];
 
-    // Find class in database
-    const foundClass = await Class.findById(cid);
-    if (!foundClass) {
-        return res.status(404).json({ success: false, message: "Class not found" });
-    }
+        // Parse lectures from JSON string
+        if (req.body.lectures) {
+            lectures = JSON.parse(req.body.lectures);
+        }
 
-    // Update class information (only if new data is provided)
-    if (req.body.title && req.body.title !== foundClass.title) {
-        foundClass.title = req.body.title;
-        foundClass.slug = slugify(req.body.title, { lower: true, strict: true });
-    }
+        // Find existing class
+        const existingClass = await Class.findById(cid);
+        if (!existingClass) {
+            throw new Error("Class not found");
+        }
 
-    if (req.body.description !== undefined) {
-        foundClass.description = req.body.description;
-    }
+        // 1️⃣ Cập nhật tiêu đề nếu có thay đổi
+        if (title && title !== existingClass.title) {
+            existingClass.title = title;
+            existingClass.slug = slugify(title, { lower: true, strict: true });
+        }
 
-    // Process class image (if provided)
-    if (req.files?.image) {
-        foundClass.image = req.files.image[0].path; // Save Cloudinary image URL
-    }
+        // 2️⃣ Cập nhật mô tả nếu có thay đổi
+        if (description !== undefined) {
+            existingClass.description = description;
+        }
 
-    if (req.body.lectures && Array.isArray(req.body.lectures)) {
-        const newLectureIds = new Set(foundClass.lectures.map(id => id.toString())); // Keep old IDs
+        // 3️⃣ Cập nhật ảnh nếu có file mới
+        let imageUrl = existingClass.image;
+        if (req.files && req.files.image && req.files.image[0]) {
+            imageUrl = req.files.image[0].path;
+        }
+        existingClass.image = imageUrl;
 
-        await Promise.all(req.body.lectures.map(async (lecture, index) => {
-            if (!lecture.title || lecture.title.trim() === "") {
-                throw new Error("Lecture title is required");
-            }
+        // 4️⃣ Xử lý danh sách bài giảng
+        let lectureIds = [...existingClass.lectures]; // Giữ nguyên các lecture cũ
+        if (lectures && lectures.length > 0) {
+            for (let i = 0; i < lectures.length; i++) {
+                const { _id, title: lectureTitle, content = "" } = lectures[i];
+                
+                // Nếu lecture có ID tồn tại -> update
+                if (_id) {
+                    const existingLecture = await Lecture.findById(_id);
+                    if (existingLecture) {
+                        // Chỉ cập nhật khi có thay đổi
+                        if (lectureTitle && lectureTitle !== existingLecture.title) {
+                            existingLecture.title = lectureTitle;
+                            existingLecture.slug = slugify(lectureTitle, { lower: true });
+                        }
+                        
+                        if (content !== undefined) {
+                            existingLecture.content = content;
+                        }
 
-            const lectureData = {
-                title: lecture.title,
-                slug: slugify(lecture.title, { lower: true }),
-                content: lecture.content || "",
-            };
+                        // Cập nhật file nếu có file mới
+                        if (req.files && req.files.lectureFiles && req.files.lectureFiles[i]) {
+                            existingLecture.file = req.files.lectureFiles[i].path;
+                            existingLecture.originalFileName = req.files.lectureFiles[i].originalname;
+                        }
 
-            // If lecture file is uploaded, update with new file
-            if (req.files?.lectureFiles && req.files.lectureFiles[index]) {
-                lectureData.file = req.files.lectureFiles[index].path;
-                lectureData.originalFileName = req.files.lectureFiles[index].originalname;
-            }
+                        await existingLecture.save();
+                    }
+                } 
+                // Nếu không có ID -> tạo mới lecture
+                else {
+                    if (!lectureTitle) throw new Error(`Lecture ${i + 1} must have a title`);
 
-            let lectureId;
-            if (lecture._id) {
-                // If lecture already exists, update information
-                const existingLecture = await Lecture.findById(lecture._id);
-                if (!existingLecture) {
-                    throw new Error(`Lecture with ID ${lecture._id} not found`);
+                    const lectureSlug = slugify(lectureTitle, { lower: true });
+                    
+                    let fileUrl = '';
+                    let originalFileName = '';
+                    if (req.files && req.files.lectureFiles && req.files.lectureFiles[i]) {
+                        fileUrl = req.files.lectureFiles[i].path;
+                        originalFileName = req.files.lectureFiles[i].originalname;
+                    }
+
+                    const newLecture = await Lecture.create({
+                        title: lectureTitle,
+                        slug: lectureSlug,
+                        content,
+                        file: fileUrl,
+                        originalFileName
+                    });
+
+                    lectureIds.push(newLecture._id);
                 }
-
-                existingLecture.title = lecture.title || existingLecture.title;
-                existingLecture.slug = slugify(existingLecture.title, { lower: true });
-                existingLecture.content = lecture.content || existingLecture.content;
-
-                if (lectureData.file) {
-                    existingLecture.file = lectureData.file;
-                    existingLecture.originalFileName = lectureData.originalFileName;
-                }
-
-                await existingLecture.save();
-                lectureId = existingLecture._id;
-            } else {
-                // If lecture doesn't exist, create a new one
-                const newLecture = await Lecture.create(lectureData);
-                lectureId = newLecture._id;
             }
+        }
 
-            newLectureIds.add(lectureId.toString()); // Add ID to the list
-        }));
+        // Cập nhật danh sách lectures
+        existingClass.lectures = lectureIds;
 
-        // Update lecture list in the class (keep old + add new)
-        foundClass.lectures = Array.from(newLectureIds);
+        // Lưu các thay đổi
+        await existingClass.save();
+
+        // 5️⃣ Populate dữ liệu trước khi trả về
+        const populatedClass = await Class.findById(existingClass._id)
+            .populate("createdBy", "name email")
+            .populate("lectures", "title content file originalFileName")
+            .select("title description image lectures");
+
+        res.status(200).json({
+            success: true,
+            updatedClass: populatedClass
+        });
+    } catch (error) {
+        console.error("Error updating class:", error.message);
+        res.status(500).json({ success: false, message: error.message });
     }
-
-    // Save changes to database
-    await foundClass.save();
-
-    // Populate data before returning the response
-    const populatedClass = await Class.findById(foundClass._id)
-        .populate('createdBy', 'name email')
-        .populate('lectures', 'title content file originalFileName')
-        .select('title description image lectures');
-
-    return res.status(200).json({
-        success: true,
-        updatedClass: populatedClass
-    });
 });
-
-// Other functions remain the same as they don't interact with the originalFileName field
-
 
 const getLatestClasses = asyncHandler(async (req, res) => {
     try {

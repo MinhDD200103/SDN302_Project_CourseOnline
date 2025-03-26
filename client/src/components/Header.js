@@ -20,10 +20,25 @@ export default function Header() {
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
-  // Kiểm tra token khi component được mount
+  // Kiểm tra token khi component được mount và khi location thay đổi
   useEffect(() => {
     checkTokenValidity();
-  }, []);
+    
+    // Đăng ký một event listener để bắt sự kiện storage thay đổi
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Cleanup listener khi component unmount
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [location]); // Thêm location vào dependencies để kiểm tra mỗi khi người dùng chuyển trang
+
+  // Xử lý khi localStorage thay đổi (từ tab/window khác)
+  const handleStorageChange = (e) => {
+    if (e.key === 'accessToken') {
+      checkTokenValidity();
+    }
+  };
 
   // Hàm kiểm tra tính hợp lệ của token
   const checkTokenValidity = () => {
@@ -69,32 +84,36 @@ export default function Header() {
 
   const handleLogin = async () => {
     try {
-      const response = await API.post("/user/login", { email, password });
+        const response = await API.post("/user/login", { email, password });
 
-      if (response.data.success) {
-        localStorage.setItem("accessToken", response.data.accessToken);
-        localStorage.setItem("email", response.data.userData.email);
-        
-        const decodedToken = jwtDecode(response.data.accessToken);
-        localStorage.setItem('role', decodedToken.role);
-        
-        if (decodedToken.role === 'teacher') {
-          localStorage.setItem('tid', decodedToken._id);
+        if (response.data.success) {
+            localStorage.setItem("accessToken", response.data.accessToken);
+            localStorage.setItem("email", response.data.userData.email);
+            
+            const decodedToken = jwtDecode(response.data.accessToken);
+            localStorage.setItem('role', decodedToken.role);
+            
+            if (decodedToken.role === 'teacher') {
+                localStorage.setItem('tid', decodedToken._id);
+            }
+
+            setIsLoggedIn(true);
+            setUserEmail(response.data.userData.email);
+            setUserRole(decodedToken.role);
+
+            sweetalert("Success", "Login successfully!", "success");
+            handleClose();
+            setEmail("");
+            setPassword("");
+            
+            // Kích hoạt sự kiện storage và courseLogin để các component khác biết có thay đổi
+            window.dispatchEvent(new Event('storage'));
+            window.dispatchEvent(new Event('courseLogin'));
         }
-
-        setIsLoggedIn(true);
-        setUserEmail(response.data.userData.email);
-        setUserRole(decodedToken.role);
-
-        sweetalert("Success", "Login successfully!", "success");
-        handleClose();
-        setEmail("");
-        setPassword("");
-      }
     } catch (error) {
-      sweetalert("Error", error.response?.data?.mes || "Login failed!", "error");
+        sweetalert("Error", error.response?.data?.mes || "Login failed!", "error");
     }
-  };
+};
 
   const handleLogout = async () => {
     try {
@@ -108,6 +127,9 @@ export default function Header() {
       setIsLoggedIn(false);
       setUserEmail("");
       setUserRole("");
+
+      // Kích hoạt sự kiện storage để các component khác biết có thay đổi
+      window.dispatchEvent(new Event('storage'));
 
       sweetalert("Success", "Logged out successfully!", "success").then(() => {
         navigate("/");
@@ -163,7 +185,7 @@ export default function Header() {
                 {isLoggedIn ? (
                   <Dropdown className="user-dropdown">
                     <Dropdown.Toggle variant="light" className="user-dropdown-toggle">
-                      <img src='/user.jpg' alt="Avatar" className="user-avatar" />
+                      <img src="/avatar.jpg" alt="Avatar" className="user-avatar" />
                       <span className="user-email">{userEmail}</span>
                     </Dropdown.Toggle>
 
@@ -177,7 +199,7 @@ export default function Header() {
                   </Dropdown>
                 ) : (
                   <button className="btn btn-primary py-2 px-4 ml-auto" onClick={handleShow}>
-                    Join Now
+                    Login
                   </button>
                 )}
               </div>

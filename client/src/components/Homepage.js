@@ -154,7 +154,7 @@ export default function Homepage() {
                             {popularClasses.map((course) => (
                                 <div key={course._id} className="col-lg-4 col-md-6 mb-4">
                                     <div className="rounded overflow-hidden mb-2">
-                                        <img className="img-fluid" src={course.image} alt="" />
+                                        <img className="img-fluid" src={course.image} alt="" style={{ height: '250px', width:'100%', objectFit: 'cover' }} />
                                         <div className="bg-secondary p-4">
                                             <Link className="h5" to={`/course/${course._id}`}>
                                                 {course.title}
@@ -203,7 +203,7 @@ export default function Homepage() {
                             {latestClasses.map((course) => (
                                 <div key={course._id} className="col-lg-4 col-md-6 mb-4">
                                     <div className="rounded overflow-hidden mb-2">
-                                        <img className="img-fluid" src={course.image} alt="" />
+                                        <img className="img-fluid" src={course.image} alt="" style={{ height: '250px', width:'100%', objectFit: 'cover' }}/>
                                         <div className="bg-secondary p-4">
                                             <Link className="h5" to={`/course/${course._id}`}>
                                                 {course.title}
