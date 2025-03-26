@@ -156,7 +156,7 @@ export default function Homepage() {
                                     <div className="rounded overflow-hidden mb-2">
                                         <img className="img-fluid" src={course.image} alt="" style={{ height: '250px', width:'100%', objectFit: 'cover' }} />
                                         <div className="bg-secondary p-4">
-                                            <Link className="h5" to={`/course/${course._id}`}>
+                                            <Link style={{fontSize: '18px', color: '#44425A'}} to={`/course/${course._id}`}>
                                                 {course.title}
                                             </Link>
                                             <div className="border-top mt-4 pt-4">
@@ -205,7 +205,7 @@ export default function Homepage() {
                                     <div className="rounded overflow-hidden mb-2">
                                         <img className="img-fluid" src={course.image} alt="" style={{ height: '250px', width:'100%', objectFit: 'cover' }}/>
                                         <div className="bg-secondary p-4">
-                                            <Link className="h5" to={`/course/${course._id}`}>
+                                            <Link style={{fontSize: '18px', color: '#44425A'}} to={`/course/${course._id}`}>
                                                 {course.title}
                                             </Link>
                                             <div className="border-top mt-4 pt-4">

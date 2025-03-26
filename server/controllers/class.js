@@ -100,7 +100,7 @@ const createClass = asyncHandler(async (req, res) => {
             if (!lectureTitle) throw new Error(`Lecture ${i + 1} must have a title`);
 
             const lectureSlug = slugify(lectureTitle, { lower: true });
-            
+
             // Check if there's a file for this lecture
             let fileUrl = '';
             let originalFileName = '';
@@ -248,7 +248,7 @@ const updateClass = asyncHandler(async (req, res) => {
         if (lectures && lectures.length > 0) {
             for (let i = 0; i < lectures.length; i++) {
                 const { _id, title: lectureTitle, content = "" } = lectures[i];
-                
+
                 // Nếu lecture có ID tồn tại -> update
                 if (_id) {
                     const existingLecture = await Lecture.findById(_id);
@@ -258,7 +258,7 @@ const updateClass = asyncHandler(async (req, res) => {
                             existingLecture.title = lectureTitle;
                             existingLecture.slug = slugify(lectureTitle, { lower: true });
                         }
-                        
+
                         if (content !== undefined) {
                             existingLecture.content = content;
                         }
@@ -271,13 +271,13 @@ const updateClass = asyncHandler(async (req, res) => {
 
                         await existingLecture.save();
                     }
-                } 
+                }
                 // Nếu không có ID -> tạo mới lecture
                 else {
                     if (!lectureTitle) throw new Error(`Lecture ${i + 1} must have a title`);
 
                     const lectureSlug = slugify(lectureTitle, { lower: true });
-                    
+
                     let fileUrl = '';
                     let originalFileName = '';
                     if (req.files && req.files.lectureFiles && req.files.lectureFiles[i]) {
@@ -345,8 +345,6 @@ const getPopularClasses = asyncHandler(async (req, res) => {
                 studentCount: { $sum: 1 }
             }
         },
-        { $sort: { studentCount: -1 } },
-        { $limit: 3 },
         {
             $lookup: {
                 from: "classes",
@@ -356,6 +354,13 @@ const getPopularClasses = asyncHandler(async (req, res) => {
             }
         },
         { $unwind: "$classInfo" },
+        {
+            $sort: {
+                studentCount: -1,  // First, sort by student count in descending order
+                "classInfo.createdAt": -1  // If student counts are equal, sort by createdAt in descending order
+            }
+        },
+        { $limit: 3 },
         {
             $lookup: {
                 from: "users",
@@ -379,8 +384,25 @@ const getPopularClasses = asyncHandler(async (req, res) => {
         }
     ]);
 
-    if (!topClasses)
-        throw new Error('Class not found')
+    if (topClasses.length < 3) {
+        const additionalClasses = await Class.find({
+            _id: { $nin: topClasses.map(cls => cls._id) }
+        })
+            .sort({ createdAt: -1 })
+            .limit(3 - topClasses.length)
+            .populate('createdBy', 'name email');
+
+        topClasses.push(...additionalClasses.map(cls => ({
+            _id: cls._id,
+            title: cls.title,
+            image: cls.image,
+            createdAt: cls.createdAt,
+            studentCount: 0,
+            creatorName: cls.createdBy.name,
+            creatorEmail: cls.createdBy.email,
+            lectures: cls.lectures,
+        })));
+    }
 
     return res.status(200).json({
         success: true,

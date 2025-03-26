@@ -1,0 +1,82 @@
+[
+  {
+    "_id": { "$oid": "67cd78bbf5f3e6ce54725161" },
+    "title": "Introduction to Programming Basics",
+    "slug": "introduction-to-programming-basics",
+    "content": "An overview of programming concepts and logic.",
+    "file": "",
+    "originalFileName": ""
+  },
+  {
+    "_id": { "$oid": "67cd78bcf5f3e6ce54725162" },
+    "title": "Variables and Data Types",
+    "slug": "variables-and-data-types",
+    "content": "Understanding different data types and variables in programming.",
+    "file": "",
+    "originalFileName": ""
+  },
+  {
+    "_id": { "$oid": "67cd78bef5f3e6ce54725164" },
+    "title": "HTML and CSS Basics",
+    "slug": "html-and-css-basics",
+    "content": "Introduction to HTML structure and CSS styling.",
+    "file": "",
+    "originalFileName": ""
+  },
+  {
+    "_id": { "$oid": "67cd78bff5f3e6ce54725165" },
+    "title": "JavaScript Introduction",
+    "slug": "javascript-introduction",
+    "content": "A beginner’s guide to JavaScript programming language.",
+    "file": "",
+    "originalFileName": ""
+  },
+  {
+    "_id": { "$oid": "67cd78c1f5f3e6ce54725167" },
+    "title": "ES6 and Modern JavaScript Features",
+    "slug": "es6-and-modern-js-features",
+    "content": "Learn about ES6 features like let/const, arrow functions, and promises.",
+    "file": "",
+    "originalFileName": ""
+  },
+  {
+    "_id": { "$oid": "67cd78c9f5f3e6ce5472516f" },
+    "title": "React Components and Props",
+    "slug": "react-components-and-props",
+    "content": "Understanding React component structure and passing data via props.",
+    "file": "",
+    "originalFileName": ""
+  },
+  {
+    "_id": { "$oid": "67cd78c4f5f3e6ce5472516a" },
+    "title": "Express.js Routing",
+    "slug": "expressjs-routing",
+    "content": "How to handle routing in an Express.js application.",
+    "file": "",
+    "originalFileName": ""
+  },
+  {
+    "_id": { "$oid": "67cd78caf5f3e6ce54725170" },
+    "title": "MongoDB Schema Design",
+    "slug": "mongodb-schema-design",
+    "content": "Designing efficient schemas for MongoDB collections.",
+    "file": "",
+    "originalFileName": ""
+  },
+  {
+    "_id": { "$oid": "67cd78cbf5f3e6ce54725171" },
+    "title": "Building a Full-Stack MERN Application",
+    "slug": "full-stack-mern-application",
+    "content": "Step-by-step guide to building a full-stack MERN application.",
+    "file": "",
+    "originalFileName": ""
+  },
+  {
+    "_id": { "$oid": "67cd78c8f5f3e6ce5472516e" },
+    "title": "Advanced JavaScript Performance Optimization",
+    "slug": "advanced-js-performance-optimization",
+    "content": "Optimizing JavaScript code for better performance and efficiency.",
+    "file": "",
+    "originalFileName": ""
+  }
+]

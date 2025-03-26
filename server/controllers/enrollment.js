@@ -66,6 +66,8 @@ const leaveClass = asyncHandler(async (req, res) => {
     })
 })
 
+
+//Cũ nhất
 // const getEnrollment = asyncHandler(async (req, res) => {
 //     const { cid } = req.params;
 //     let queries = { ...req.query };
@@ -104,28 +106,10 @@ const leaveClass = asyncHandler(async (req, res) => {
 //         formatedQueries.student = { $in: studentIds };
 //     }
 
-//     // Debug kiểm tra query sau khi đã tách email
-//     // console.log("Final Query to Enrollment:", formatedQueries);
-
 //     // Khởi tạo query
 //     let queryCommand = Enrollment.find(formatedQueries)
 //         .populate('student', 'name email') // Lấy thông tin sinh viên
-//         // .populate('classId', 'title'); // Lấy thông tin lớp
-//         .select('student enrolledAt')
-
-//     // Sắp xếp (Sorting)
-//     if (req.query.sort) {
-//         const sortBy = req.query.sort.split(',').join(' ');
-//         queryCommand = queryCommand.sort(sortBy);
-//     } else {
-//         queryCommand = queryCommand.sort('-enrolledAt');
-//     }
-
-//     // Lựa chọn các trường dữ liệu cụ thể (Fields Selection)
-//     if (req.query.fields) {
-//         const fields = req.query.fields.split(',').join(' ');
-//         queryCommand = queryCommand.select(fields);
-//     }
+//         .select('student enrolledAt');
 
 //     // Phân trang (Pagination)
 //     const page = parseInt(req.query.page) || 1;
@@ -134,7 +118,11 @@ const leaveClass = asyncHandler(async (req, res) => {
 //     queryCommand = queryCommand.skip(skip).limit(limit);
 
 //     // Thực thi truy vấn
-//     const enrollments = await queryCommand.exec();
+//     let enrollments = await queryCommand.exec();
+
+//     // Sắp xếp theo email của student
+//     enrollments.sort((a, b) => a.student.email.localeCompare(b.student.email));
+
 //     const totalCount = await Enrollment.countDocuments(formatedQueries);
 
 //     return res.status(200).json({
@@ -146,7 +134,77 @@ const leaveClass = asyncHandler(async (req, res) => {
 //     });
 // });
 
+//Vừa xong
+// const getEnrollment = asyncHandler(async (req, res) => {
+//     const { cid } = req.params;
+//     let queries = { ...req.query };
 
+//     const foundClass = await Class.findById(cid);
+//     if (!foundClass) {
+//         throw new Error('Cannot find class');
+//     }
+
+//     // Exclude unnecessary fields
+//     const excludeFields = ['limit', 'sort', 'page', 'fields', 'email'];
+//     excludeFields.forEach(item => delete queries[item]);
+
+//     // Format operators for mongoose
+//     let queryString = JSON.stringify(queries);
+//     queryString = queryString.replace(/\b(gte|gt|lt|lte)\b/g, matchedItem => `$${matchedItem}`);
+//     const formatedQueries = JSON.parse(queryString);
+
+//     let studentIds = [];
+
+//     // Find student IDs if email filter is present
+//     if (req.query.email) {
+//         const students = await User.find({ email: { $regex: req.query.email, $options: 'i' } }).select('_id');
+//         studentIds = students.map(s => s._id);
+
+//         if (studentIds.length === 0) {
+//             return res.status(200).json({ success: true, totalPages: 0, currentPage: 1, totalCount: 0, enrollments: [] });
+//         }
+//     }
+
+//     // Filter by classId
+//     formatedQueries.classId = cid;
+
+//     // Add studentIds to query if present
+//     if (studentIds.length > 0) {
+//         formatedQueries.student = { $in: studentIds };
+//     }
+
+//     // Initialize query
+//     let queryCommand = Enrollment.find(formatedQueries)
+//         .populate('student', 'name email')
+//         .select('student enrolledAt');
+
+//     // Pagination
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     const skip = (page - 1) * limit;
+//     queryCommand = queryCommand.skip(skip).limit(limit);
+
+//     // Sorting
+//     if (req.query.sort) {
+//         const sortField = req.query.sort.startsWith('-') ? '-student.email' : 'student.email';
+//         queryCommand = queryCommand.sort(sortField);
+//     }
+
+//     // Execute query
+//     let enrollments = await queryCommand.exec();
+
+//     const totalCount = await Enrollment.countDocuments(formatedQueries);
+
+//     return res.status(200).json({
+//         success: true,
+//         totalPages: Math.ceil(totalCount / limit),
+//         currentPage: page,
+//         totalCount,
+//         enrollments
+//     });
+// });
+
+//Mới nhất
 const getEnrollment = asyncHandler(async (req, res) => {
     const { cid } = req.params;
     let queries = { ...req.query };
@@ -156,18 +214,18 @@ const getEnrollment = asyncHandler(async (req, res) => {
         throw new Error('Cannot find class');
     }
 
-    // Loại bỏ các tham số không liên quan
-    const excludeFields = ['limit', 'sort', 'page', 'fields', 'email']; // Loại bỏ email luôn
+    // Loại bỏ các field không cần thiết
+    const excludeFields = ['limit', 'sort', 'page', 'fields', 'email'];
     excludeFields.forEach(item => delete queries[item]);
 
-    // Format lại các operators cho mongoose ($gte, $gt, $lte, $lt)
+    // Chuyển đổi toán tử cho Mongoose
     let queryString = JSON.stringify(queries);
     queryString = queryString.replace(/\b(gte|gt|lt|lte)\b/g, matchedItem => `$${matchedItem}`);
-    const formatedQueries = JSON.parse(queryString);
+    const formattedQueries = JSON.parse(queryString);
 
     let studentIds = [];
 
-    // Nếu có filter theo email, tìm student _id tương ứng
+    // Nếu có tìm kiếm theo email, lọc ID của sinh viên trước
     if (req.query.email) {
         const students = await User.find({ email: { $regex: req.query.email, $options: 'i' } }).select('_id');
         studentIds = students.map(s => s._id);
@@ -178,40 +236,46 @@ const getEnrollment = asyncHandler(async (req, res) => {
     }
 
     // Lọc theo classId
-    formatedQueries.classId = cid;
+    formattedQueries.classId = cid;
 
-    // Nếu có studentIds, thêm vào query
+    // Nếu có studentIds, chỉ lấy những sinh viên trong danh sách
     if (studentIds.length > 0) {
-        formatedQueries.student = { $in: studentIds };
+        formattedQueries.student = { $in: studentIds };
     }
 
-    // Khởi tạo query
-    let queryCommand = Enrollment.find(formatedQueries)
-        .populate('student', 'name email') // Lấy thông tin sinh viên
-        .select('student enrolledAt');
+    // Fetch dữ liệu từ MongoDB (chưa sort)
+    let enrollments = await Enrollment.find(formattedQueries)
+        .populate('student', 'name email')
+        .select('student enrolledAt')
+        .lean(); // Chuyển sang JS Object để có thể sort
 
-    // Phân trang (Pagination)
+    // Sắp xếp theo email
+    if (req.query.sort === '-email') {
+        enrollments.sort((a, b) => b.student.email.localeCompare(a.student.email)); // Giảm dần
+    } else {
+        enrollments.sort((a, b) => a.student.email.localeCompare(b.student.email)); // Tăng dần
+    }
+
+    // Tổng số kết quả
+    const totalCount = enrollments.length;
+
+    // Pagination sau khi sort
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    queryCommand = queryCommand.skip(skip).limit(limit);
-
-    // Thực thi truy vấn
-    let enrollments = await queryCommand.exec();
-
-    // Sắp xếp theo email của student
-    enrollments.sort((a, b) => a.student.email.localeCompare(b.student.email));
-
-    const totalCount = await Enrollment.countDocuments(formatedQueries);
+    const totalPages = Math.ceil(totalCount / limit);
+    const paginatedResults = enrollments.slice((page - 1) * limit, page * limit);
 
     return res.status(200).json({
         success: true,
-        totalPages: Math.ceil(totalCount / limit),
+        totalPages,
         currentPage: page,
         totalCount,
-        enrollments
+        enrollments: paginatedResults
     });
 });
+
+
+
 
 const getUserClasses = asyncHandler(async (req, res) => {
     const { _id, role } = req.user

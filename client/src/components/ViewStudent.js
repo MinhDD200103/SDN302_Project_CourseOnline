@@ -1,42 +1,42 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import { Container, Row, Col, Form, InputGroup, Button, Table, Card, Pagination, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Form, InputGroup, Button, Table, Badge, Pagination } from 'react-bootstrap';
 import API_BASE_URL from '../config/config';
 import { useParams } from 'react-router-dom';
 
 const ViewStudent = () => {
-
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
-    const [limit, setLimit] = useState(3)
-    const { cid } = useParams()
-    const [email, setEmail] = useState('')
-    const [students, setStudents] = useState([])
-    const [sort, setSort] = useState(false)
-    const [courseTitle, setCourseTitle] = useState('')
-
-
+    const [limit, setLimit] = useState(3);
+    const { cid } = useParams();
+    const [email, setEmail] = useState('');
+    const [students, setStudents] = useState([]);
+    const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
+    const [courseTitle, setCourseTitle] = useState('');
 
     useEffect(() => {
-        const fetchStudent = async () => {
+        const fetchStudentAndCourse = async () => {
             try {
+                // Construct query with sorting
                 let query = `${API_BASE_URL}/enrollment/${cid}?page=${currentPage}&limit=${limit}`;
+
                 if (email.trim() !== '') {
                     query += `&email=${email}`;
                 }
 
-                query += `&sort=${sort ? '-email' : 'email'}`;
+                // Chỉ sort theo email
+                query += `&sort=${sortDirection === 'desc' ? '-email' : 'email'}`;
 
                 const response = await axios.get(query, {
                     headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
                     withCredentials: true
                 });
 
+                console.log(response.data);
+                
                 setCurrentPage(response.data.currentPage);
                 setTotalPages(response.data.totalPages);
                 setStudents(response.data.enrollments);
-
-
             } catch (error) {
                 console.error("Error fetching students:", error);
             }
@@ -44,34 +44,27 @@ const ViewStudent = () => {
 
         const fetchCourse = async () => {
             try {
-
                 const response = await axios.get(`${API_BASE_URL}/class/${cid}`);
-                
-                setCourseTitle(response.data.class.title)
-
-
+                setCourseTitle(response.data.class.title);
             } catch (error) {
-                console.error("Error fetching students:", error);
+                console.error("Error fetching course:", error);
             }
         };
 
-
-        fetchStudent();
+        fetchStudentAndCourse();
         fetchCourse();
-    }, [email, sort, currentPage, limit, cid]);
+    }, [email, sortDirection, currentPage, limit, cid]);
 
-    console.log(sort);
+    const handleSort = () => {
+        // Toggle sort direction
+        setSortDirection(prevDirection =>
+            prevDirection === 'asc' ? 'desc' : 'asc'
+        );
+    };
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
-        // Scroll lên đầu trang khi chuyển trang
-        // window.scrollTo(0, 0);
-    }
-
-
-    useEffect(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [])
+    };
 
     return (
         <Container fluid className="p-4">
@@ -79,7 +72,7 @@ const ViewStudent = () => {
                 <Col>
                     <div className="d-flex align-items-center">
                         <h4 className="mb-0">Students</h4>
-                        <Badge className="ms-3" pill >{students.length}</Badge>
+                        <Badge className="ms-3" pill>{students.length}</Badge>
                     </div>
                 </Col>
                 <Col className="d-flex justify-content-end">
@@ -94,17 +87,6 @@ const ViewStudent = () => {
                             onChange={(e) => setEmail(e.target.value)}
                         />
                     </InputGroup>
-                    {/* <Button variant="outline-secondary" className="me-2">
-                        <i className="bi bi-list"></i>
-                    </Button>
-                    <Button variant="outline-secondary">
-                        <i className="bi bi-bell"></i>
-                    </Button>
-                    <div className="ms-3 avatar-container">
-                        <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
-                            JD
-                        </div>
-                    </div> */}
                 </Col>
             </Row>
 
@@ -112,25 +94,20 @@ const ViewStudent = () => {
                 <Col md={3}>
                     <Form.Group>
                         <Form.Label>Course</Form.Label>
-                        {/* <Form.Select  >
-                            <option>Big Ben</option>
-                           
-                        </Form.Select> */}
                         <p>{courseTitle}</p>
                     </Form.Group>
                 </Col>
                 <Col className="d-flex justify-content-end align-items-end">
-                    <Button variant="outline-success" className="me-2" onClick={() => setSort(!sort)}>
+                    <Button
+                        variant="outline-success"
+                        className="me-2"
+                        onClick={handleSort}
+                    >
                         <i className="bi bi-funnel me-2"></i>
-                        Sort
+                        Sort by Email
                     </Button>
-                    {/* <Button variant="primary">
-                        <i className="bi bi-person-plus me-2"></i>
-                        Add a student
-                    </Button> */}
                 </Col>
             </Row>
-
 
             <Table striped bordered hover style={{ marginBottom: '50px' }}>
                 <thead>
@@ -138,33 +115,26 @@ const ViewStudent = () => {
                         <th>#</th>
                         <th>Name</th>
                         <th>Email</th>
-                        {/* <th>Username</th> */}
                     </tr>
                 </thead>
-                {students.map((s, index) => (
-                    <tbody key={`student-${index}`}>
-                        <tr>
+                <tbody>
+                    {students.map((s, index) => (
+                        <tr key={`student-${index}`}>
                             <td>{index + 1}</td>
                             <td>{s.student.name}</td>
                             <td>{s.student.email}</td>
                         </tr>
-                    </tbody>
-                ))}
-
-
-
+                    ))}
+                </tbody>
             </Table>
-
 
             <div className="d-flex justify-content-center mt-4">
                 <Pagination>
-
                     <Pagination.Prev
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
                     />
 
-                    {/* Hiển thị các số trang */}
                     {[...Array(totalPages)].map((_, index) => (
                         <Pagination.Item
                             key={index + 1}
@@ -179,7 +149,6 @@ const ViewStudent = () => {
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
                     />
-
                 </Pagination>
             </div>
         </Container>

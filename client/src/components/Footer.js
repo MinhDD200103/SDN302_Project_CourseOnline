@@ -87,7 +87,7 @@ export default function Footer() {
                             sea tempor magna tempor. Accu kasd sed ea duo ipsum. Dolor duo eirmod
                             sea justo no lorem est diam
                         </p>
-                        <div className="w-100">
+                        {/* <div className="w-100">
                             <div className="input-group">
                                 <input
                                     type="text"
@@ -99,7 +99,7 @@ export default function Footer() {
                                     <button className="btn btn-primary px-4">Sign Up</button>
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </div>

@@ -1,0 +1,96 @@
+[
+  {
+    "_id": { "$oid": "67cd78bdf5f3e6ce54725160" },
+    "title": "Web Development Fundamentals",
+    "slug": "web-development-fundamentals",
+    "description": "An introductory course on web development.",
+    "image": "",
+    "createdBy": { "$oid": "67c2fa7879c3a8354a54f4a5" },
+    "lectures": [
+      { "$oid": "67cd78bbf5f3e6ce54725161" },
+      { "$oid": "67cd78bcf5f3e6ce54725162" }
+    ]
+  },
+  {
+    "_id": { "$oid": "67cd78bef5f3e6ce54725163" },
+    "title": "JavaScript Essentials",
+    "slug": "javascript-essentials",
+    "description": "Learn the fundamentals of JavaScript programming.",
+    "image": "",
+    "createdBy": { "$oid": "67cd789af5f3e6ce5472515f" },
+    "lectures": [
+      { "$oid": "67cd78bff5f3e6ce54725165" },
+      { "$oid": "67cd78c1f5f3e6ce54725167" }
+    ]
+  },
+  {
+    "_id": { "$oid": "67cd78c2f5f3e6ce54725168" },
+    "title": "React.js for Beginners",
+    "slug": "reactjs-for-beginners",
+    "description": "A beginner's guide to building React applications.",
+    "image": "",
+    "createdBy": { "$oid": "67c2fa7879c3a8354a54f4a5" },
+    "lectures": [
+      { "$oid": "67cd78c9f5f3e6ce5472516f" },
+      { "$oid": "67cd78c4f5f3e6ce5472516a" }
+    ]
+  },
+  {
+    "_id": { "$oid": "67cd78c5f5f3e6ce5472516b" },
+    "title": "Backend Development with Node.js",
+    "slug": "backend-development-nodejs",
+    "description": "Understand the core concepts of backend development using Node.js.",
+    "image": "",
+    "createdBy": { "$oid": "67cd789af5f3e6ce5472515f" },
+    "lectures": [
+      { "$oid": "67cd78c4f5f3e6ce5472516a" },
+      { "$oid": "67cd78caf5f3e6ce54725170" }
+    ]
+  },
+  {
+    "_id": { "$oid": "67cd78c6f5f3e6ce5472516c" },
+    "title": "MongoDB for Developers",
+    "slug": "mongodb-for-developers",
+    "description": "A complete guide to working with MongoDB as a developer.",
+    "image": "",
+    "createdBy": { "$oid": "67c2fa7879c3a8354a54f4a5" },
+    "lectures": [
+      { "$oid": "67cd78caf5f3e6ce54725170" },
+      { "$oid": "67cd78cbf5f3e6ce54725171" }
+    ]
+  },
+  {
+    "_id": { "$oid": "67cd78c7f5f3e6ce5472516d" },
+    "title": "Full-Stack MERN Development",
+    "slug": "full-stack-mern-development",
+    "description": "Build a full-stack web application using the MERN stack.",
+    "image": "",
+    "createdBy": { "$oid": "67cd789af5f3e6ce5472515f" },
+    "lectures": [
+      { "$oid": "67cd78cbf5f3e6ce54725171" },
+      { "$oid": "67cd78c8f5f3e6ce5472516e" }
+    ]
+  },
+  {
+    "_id": { "$oid": "67cd78c9f5f3e6ce5472516f" },
+    "title": "Advanced JavaScript Performance",
+    "slug": "advanced-javascript-performance",
+    "description": "Improve JavaScript performance with best practices and techniques.",
+    "image": "",
+    "createdBy": { "$oid": "67c2fa7879c3a8354a54f4a5" },
+    "lectures": [
+      { "$oid": "67cd78c8f5f3e6ce5472516e" }
+    ]
+  },
+  {
+    "_id": { "$oid": "67cd78caf5f3e6ce54725170" },
+    "title": "Modern Web Security Practices",
+    "slug": "modern-web-security-practices",
+    "description": "Understand security principles and best practices for web applications.",
+    "image": "",
+    "createdBy": { "$oid": "67cd789af5f3e6ce5472515f" },
+    "lectures": [
+      { "$oid": "67cd78c8f5f3e6ce5472516e" }
+    ]
+  }
+]
